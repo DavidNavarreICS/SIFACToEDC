@@ -1,4 +1,5 @@
-﻿Imports System.Globalization
+﻿Imports System.Diagnostics
+Imports System.Globalization
 Imports Microsoft.Office.Interop.Excel
 
 Public Class ExtractedData
@@ -41,6 +42,7 @@ Public Class ExtractedData
         Public J_DatePce As String
         Public K_DCompt As DateCompte
         Public L_NumPiece As String
+        Public M_Comment As String
 
         Public Function CompareTo(other As BookLine) As Integer Implements IComparable(Of BookLine).CompareTo
             If K_DCompt IsNot Nothing Then
@@ -132,10 +134,10 @@ Public Class ExtractedData
         ReducedTable.Add(KEY_MISSION_PENDING, New List(Of BookLine))
         ReducedTable.Add(KEY_MISSION, New List(Of BookLine))
         TrashTable.Add(KEY_TRASH, New List(Of BookLine))
-        PrepareExtractFromTo(BaseWorksheet, NewWorksheet, TrashWorksheet)
+        PrepareExtractFromTo(BaseWorksheet)
     End Sub
-    Public Sub DoExtract()
-        ExtractFromTo(BaseWorksheet, NewWorksheet, TrashWorksheet)
+    Public Sub DoExtract(PreviousExtraction As ExtractedData)
+        ExtractFromTo(BaseWorksheet, NewWorksheet, TrashWorksheet, PreviousExtraction)
         NewWorkbook.Save()
         NewWorkbook.Close()
     End Sub
@@ -161,14 +163,14 @@ Public Class ExtractedData
         NewWorksheet.Name = SheetName
         Return NewWorksheet
     End Function
-    Private Sub PrepareExtractFromTo(BaseWorksheet As Excel.Worksheet, NewWorksheet As Excel.Worksheet, TrashWorksheet As Excel.Worksheet)
+    Private Sub PrepareExtractFromTo(BaseWorksheet As Excel.Worksheet)
         Globals.ThisAddIn.NameStep("Lecture des lignes")
         FeedTable(BaseWorksheet)
         Globals.ThisAddIn.NameStep("Traitement des lignes")
         ReduceTable()
     End Sub
-    Private Sub ExtractFromTo(BaseWorksheet As Excel.Worksheet, NewWorksheet As Excel.Worksheet, TrashWorksheet As Excel.Worksheet)
-        ReduceLines()
+    Private Sub ExtractFromTo(BaseWorksheet As Excel.Worksheet, NewWorksheet As Excel.Worksheet, TrashWorksheet As Excel.Worksheet, previousExtraction As ExtractedData)
+        ReduceLines(previousExtraction)
         Globals.ThisAddIn.NameStep("Générations des feuilles")
         CopyHeaders(BaseWorksheet, TrashWorksheet)
         CopyHeaders(BaseWorksheet, NewWorksheet)
@@ -219,12 +221,44 @@ Public Class ExtractedData
             PreReducedTable.Add(Key, PreparedLines)
         Next
     End Sub
-    Private Sub ReduceLines()
+    Private Sub ReduceLines(previousExtraction As ExtractedData)
+        If previousExtraction IsNot Nothing Then
+            For Each Line As BookLine In previousExtraction.PendingOrders
+                If Line.M_Comment = "" Then
+                    Line.M_Comment = $"Ligne venant de {previousExtraction.SheetYear}"
+                End If
+                If PreReducedTable.ContainsKey(Line.C_NumeroFlux) Then
+                    PreReducedTable.Item(Line.C_NumeroFlux).Item(CASE_COMMANDE).Add(Line)
+                Else
+                    PreReducedTable.Add(Line.C_NumeroFlux, New Dictionary(Of String, List(Of BookLine)) From {
+                    {CASE_COMMANDE, New List(Of BookLine) From {Line}}})
+                End If
+            Next
+            previousExtraction.PendingOrders.Clear()
+            For Each Line As BookLine In previousExtraction.PendingMissions
+                If Line.M_Comment = "" Then
+                    Line.M_Comment = $"Ligne venant de {previousExtraction.SheetYear}"
+                End If
+                If PreReducedTable.ContainsKey(Line.C_NumeroFlux) Then
+                    PreReducedTable.Item(Line.C_NumeroFlux).Item(CASE_MISSION).Add(Line)
+                Else
+                    PreReducedTable.Add(Line.C_NumeroFlux, New Dictionary(Of String, List(Of BookLine)) From {
+                    {CASE_MISSION, New List(Of BookLine) From {Line}}})
+                End If
+            Next
+            previousExtraction.PendingMissions.Clear()
+        End If
         For Each Key As String In PreReducedTable.Keys
-            Dim CommandePaiementFound As Boolean = PreReducedTable.Item(Key).Item(CASE_COMMANDE_PAIEMENT).Count > 0
-            Dim MissionPaiementFound As Boolean = PreReducedTable.Item(Key).Item(CASE_MISSION_PAIEMENT).Count > 0
+            Dim CommandePaiementFound As Boolean = PreReducedTable.Item(Key).ContainsKey(CASE_COMMANDE_PAIEMENT)
+            If CommandePaiementFound Then
+                CommandePaiementFound = PreReducedTable.Item(Key).Item(CASE_COMMANDE_PAIEMENT).Count > 0
+            End If
+            Dim MissionPaiementFound As Boolean = PreReducedTable.Item(Key).ContainsKey(CASE_MISSION_PAIEMENT)
+            If MissionPaiementFound Then
+                MissionPaiementFound = PreReducedTable.Item(Key).Item(CASE_MISSION_PAIEMENT).Count > 0
+            End If
             Dim PreparedLines As Dictionary(Of String, List(Of BookLine)) = PreReducedTable.Item(Key)
-            Dim MAX_K_DCompt As DateCompte = FullTable.Item(Key).Max().K_DCompt
+
             If CommandePaiementFound Then
                 ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_COMMANDE_PAIEMENT))
                 TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_COMMANDE))
@@ -246,7 +280,9 @@ Public Class ExtractedData
             If PreparedLines.ContainsKey(CASE_AVOIR_PAIEMENT) Then
                 ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_AVOIR_PAIEMENT))
             End If
-            TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_UNUSED))
+            If PreparedLines.ContainsKey(CASE_UNUSED) Then
+                TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_UNUSED))
+            End If
         Next
     End Sub
     Private Sub AddLineToTable(Key As String, PreparedLines As Dictionary(Of String, List(Of BookLine)), Line As BookLine)
@@ -265,8 +301,8 @@ Public Class ExtractedData
         Dim DestRange As Excel.Range = newWorksheet.Range("A1")
         SourceRange.Copy(DestRange)
         For I As Integer = 1 To 12
-            Dim RDest As Excel.Range = DestRange.Item(1, I)
-            Dim RSource As Excel.Range = SourceRange.Cells().Item(1, I)
+            Dim RDest As Excel.Range = DestRange.Cells(1, I)
+            Dim RSource As Excel.Range = SourceRange.Cells(1, I)
             RDest.ColumnWidth = RSource.ColumnWidth
         Next
     End Sub
@@ -275,18 +311,18 @@ Public Class ExtractedData
         Dim StartRange As Excel.Range = Worksheet.Range("A3")
         For Each LineList As List(Of BookLine) In DataTable.Values
             For Each Line As BookLine In LineList
-                StartRange.Item(CurrentLine, 1).Value2 = Line.A_Cptegen
-                StartRange.Item(CurrentLine, 2).Value2 = Line.B_Rubrique
-                StartRange.Item(CurrentLine, 3).Value2 = Line.C_NumeroFlux
-                StartRange.Item(CurrentLine, 4).Value2 = Line.D_Nom
-                StartRange.Item(CurrentLine, 5).Value2 = Line.E_Libelle
-                StartRange.Item(CurrentLine, 6).Value2 = Line.F_MntEngHTR
-                StartRange.Item(CurrentLine, 7).Value2 = Line.G_MontantPa
-                StartRange.Item(CurrentLine, 8).Value2 = Line.H_Rapprochmt
-                StartRange.Item(CurrentLine, 9).Value2 = Line.I_RefFactF
-                StartRange.Item(CurrentLine, 10).Value2 = Line.J_DatePce
-                StartRange.Item(CurrentLine, 11).Value2 = GetDateCompteAsText(Line)
-                StartRange.Item(CurrentLine, 12).Value2 = Line.L_NumPiece
+                StartRange.Cells(CurrentLine, 1).Value2 = Line.A_Cptegen
+                StartRange.Cells(CurrentLine, 2).Value2 = Line.B_Rubrique
+                StartRange.Cells(CurrentLine, 3).Value2 = Line.C_NumeroFlux
+                StartRange.Cells(CurrentLine, 4).Value2 = Line.D_Nom
+                StartRange.Cells(CurrentLine, 5).Value2 = Line.E_Libelle
+                StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
+                StartRange.Cells(CurrentLine, 7).Value2 = Line.G_MontantPa
+                StartRange.Cells(CurrentLine, 8).Value2 = Line.H_Rapprochmt
+                StartRange.Cells(CurrentLine, 9).Value2 = Line.I_RefFactF
+                StartRange.Cells(CurrentLine, 10).Value2 = Line.J_DatePce
+                StartRange.Cells(CurrentLine, 11).Value2 = GetDateCompteAsText(Line)
+                StartRange.Cells(CurrentLine, 12).Value2 = Line.L_NumPiece
                 CurrentLine += 1
                 Globals.ThisAddIn.NextStep()
                 Globals.ThisAddIn.NextStep()
@@ -328,18 +364,19 @@ Public Class ExtractedData
 
     Public Shared Function ReadLine(FullRange As Range, RowNum As Integer) As BookLine
         Return New BookLine With {
-            .A_Cptegen = FullRange.Item(RowNum, 1).Value2,
-            .B_Rubrique = FullRange.Item(RowNum, 2).Value2,
-            .C_NumeroFlux = FullRange.Item(RowNum, 3).Value2,
-            .D_Nom = FullRange.Item(RowNum, 4).Value2,
-            .E_Libelle = FullRange.Item(RowNum, 5).Value2,
+            .A_Cptegen = FullRange.Cells(RowNum, 1).Value2,
+            .B_Rubrique = FullRange.Cells(RowNum, 2).Value2,
+            .C_NumeroFlux = FullRange.Cells(RowNum, 3).Value2,
+            .D_Nom = FullRange.Cells(RowNum, 4).Value2,
+            .E_Libelle = FullRange.Cells(RowNum, 5).Value2,
             .F_MntEngHTR = GetNumber(FullRange, RowNum, 6),
             .G_MontantPa = GetNumber(FullRange, RowNum, 7),
-            .H_Rapprochmt = FullRange.Item(RowNum, 8).Value2,
-            .I_RefFactF = FullRange.Item(RowNum, 9).Value2,
-            .J_DatePce = FullRange.Item(RowNum, 10).Value2,
-            .K_DCompt = GetDateCompte(FullRange.Item(RowNum, 11).Value2),
-            .L_NumPiece = FullRange.Item(RowNum, 12).Value2
+            .H_Rapprochmt = FullRange.Cells(RowNum, 8).Value2,
+            .I_RefFactF = FullRange.Cells(RowNum, 9).Value2,
+            .J_DatePce = FullRange.Cells(RowNum, 10).Value2,
+            .K_DCompt = GetDateCompte(FullRange.Cells(RowNum, 11).Value2),
+            .L_NumPiece = FullRange.Cells(RowNum, 12).Value2,
+            .M_Comment = ""
         }
     End Function
 
@@ -352,7 +389,7 @@ Public Class ExtractedData
     End Function
 
     Private Shared Function GetNumber(FullRange As Range, RowNum As Integer, ColNum As Integer) As Double
-        Dim TextToConvert As String = FullRange.Item(RowNum, ColNum).Value2
+        Dim TextToConvert As String = FullRange.Cells(RowNum, ColNum).Value2
         Dim IndexVirgule As Integer = TextToConvert.IndexOf(",")
         Dim IndexPoint As Integer = TextToConvert.IndexOf(".")
         If IndexPoint = -1 Then

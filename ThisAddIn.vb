@@ -49,7 +49,8 @@ Public Class ThisAddIn
     "Réf. FactF",
     "D. Piéce F",
     "D. compt.",
-    "Nº pièce"
+    "Nº pièce",
+    "Commentaires"
     }
     Private Sub ThisAddIn_Startup() Handles Me.Startup
 
@@ -258,6 +259,7 @@ Public Class ThisAddIn
         Dim LastClosedCol As Integer = CurrentCol - 5
         Dim CurrentYearAmountCol As Integer = CurrentCol - 3
         Dim TotalNetAddress As String = "$B$9"
+        Dim TotalNetUPSAddress As String = "$B$7"
 
         SummaryWorkSheet.Range(BaseRange.Offset(0, CurrentCol).Address, BaseRange.Offset(0, CurrentCol + 1).Address).Merge()
         BaseRange.Offset(0, CurrentCol).Value2 = $"> {YearList.Max}"
@@ -271,8 +273,8 @@ Public Class ThisAddIn
         BaseRange.Offset(5, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
         BaseRange.Offset(6, CurrentCol).Value2 = ""
         BaseRange.Offset(6, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-        BaseRange.Offset(7, CurrentCol).Value2 = ""
-        BaseRange.Offset(7, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
+        BaseRange.Offset(7, CurrentCol).Formula = $"={TotalNetUPSAddress}-{BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False)}-SUM({BaseRange.Offset(7, FirstCol).Address(False, False)}:{BaseRange.Offset(7, LastClosedCol).Address(False, False)})"
+        BaseRange.Offset(7, CurrentCol).Style = "RecapNumberStyle5"
 
         BaseRange.Offset(0, CurrentCol + 1).Value2 = ""
         SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
@@ -328,7 +330,8 @@ Public Class ThisAddIn
                     .I_RefFactF = "",
                     .J_DatePce = "",
                     .K_DCompt = Nothing,
-                    .L_NumPiece = ""
+                    .L_NumPiece = "",
+                    .M_Comment = ""
                 }
                 Dim Year As Integer = CInt(CDDWorksheet.Range($"C{NumRow}").Value2)
                 If CDDMap.ContainsKey(Year) Then
@@ -390,7 +393,12 @@ Public Class ThisAddIn
         YearList.Sort()
         For Each Year As Integer In YearList
             Dim Extraction As ExtractedData = Data.Item(Year)
-            Extraction.DoExtract()
+            If Year = YearList.Min Then
+                Extraction.DoExtract(Nothing)
+            Else
+                Dim PreviousExtraction As ExtractedData = Data.Item(Year - 1)
+                Extraction.DoExtract(PreviousExtraction)
+            End If
             TotalNumberOfLinesToRecap += Extraction.Orders.Count
             TotalNumberOfLinesToRecap += Extraction.Missions.Count
             TotalNumberOfLinesToRecap += Extraction.PendingOrders.Count
@@ -539,6 +547,17 @@ Public Class ThisAddIn
             NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
             NewStyle.NumberFormatLocal = "# ##0,00 €"
         End If
+
+        If Not ContainsStyle("RecapNumberStyle5") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle5")
+            NewStyle.Interior.Color = RGB(102, 102, 153)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Black)
+            NewStyle.Font.Size = 9
+            NewStyle.Font.Bold = True
+            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
+            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
+            NewStyle.NumberFormatLocal = "# ##0,00 €"
+        End If
     End Sub
 
     Private Function ContainsStyle(AStyle As String) As Boolean
@@ -638,41 +657,42 @@ Public Class ThisAddIn
             CurrentLine += 1
             Dim FirstLine As Integer = CurrentLine
             For Each Line As BookLine In LineList
-                StartRange.Item(CurrentLine, 1).Value2 = Line.A_Cptegen
-                StartRange.Item(CurrentLine, 2).Value2 = Line.B_Rubrique
-                StartRange.Item(CurrentLine, 3).Value2 = Line.C_NumeroFlux
-                StartRange.Item(CurrentLine, 4).Value2 = Line.D_Nom
-                StartRange.Item(CurrentLine, 5).Value2 = Line.E_Libelle
+                StartRange.Cells(CurrentLine, 1).Value2 = Line.A_Cptegen
+                StartRange.Cells(CurrentLine, 2).Value2 = Line.B_Rubrique
+                StartRange.Cells(CurrentLine, 3).Value2 = Line.C_NumeroFlux
+                StartRange.Cells(CurrentLine, 4).Value2 = Line.D_Nom
+                StartRange.Cells(CurrentLine, 5).Value2 = Line.E_Libelle
                 If Line.F_MntEngHTR = 0 Then
-                    StartRange.Item(CurrentLine, 6).Value2 = Line.G_MontantPa
+                    StartRange.Cells(CurrentLine, 6).Value2 = Line.G_MontantPa
                 Else
-                    StartRange.Item(CurrentLine, 6).Value2 = Line.F_MntEngHTR
+                    StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
                 End If
-                CType(StartRange.Item(CurrentLine, 6), Excel.Range).Style = "MtEngStyle"
-                StartRange.Item(CurrentLine, 7).Value2 = Line.G_MontantPa
-                CType(StartRange.Item(CurrentLine, 7), Excel.Range).Style = "MtPAStyle"
-                StartRange.Item(CurrentLine, 8).Value2 = Line.H_Rapprochmt
-                StartRange.Item(CurrentLine, 9).Value2 = Line.I_RefFactF
-                StartRange.Item(CurrentLine, 10).Value2 = Line.J_DatePce
-                StartRange.Item(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
-                StartRange.Item(CurrentLine, 12).Value2 = Line.L_NumPiece
+                CType(StartRange.Cells(CurrentLine, 6), Excel.Range).Style = "MtEngStyle"
+                StartRange.Cells(CurrentLine, 7).Value2 = Line.G_MontantPa
+                CType(StartRange.Cells(CurrentLine, 7), Excel.Range).Style = "MtPAStyle"
+                StartRange.Cells(CurrentLine, 8).Value2 = Line.H_Rapprochmt
+                StartRange.Cells(CurrentLine, 9).Value2 = Line.I_RefFactF
+                StartRange.Cells(CurrentLine, 10).Value2 = Line.J_DatePce
+                StartRange.Cells(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
+                StartRange.Cells(CurrentLine, 12).Value2 = Line.L_NumPiece
+                StartRange.Cells(CurrentLine, 13).Value2 = Line.M_Comment
                 CurrentLine += 1
                 Globals.ThisAddIn.NextStep()
             Next
             If CurrentLine <> FirstLine Then
                 Dim LastLine As Integer = CurrentLine - 1
-                StartRange.Item(CurrentLine, SUM_COL - 1).Value2 = LABEL_SUM
-                CType(StartRange.Item(CurrentLine, SUM_COL), Excel.Range).Formula = $"=SUM({SUM_COL_LETTER}{FirstLine}:{SUM_COL_LETTER}{LastLine})"
-                CType(StartRange.Item(CurrentLine, SUM_COL), Excel.Range).Style = "SumStyle"
-                ImportantCells.Item(Year).Add(Key, CType(StartRange.Item(CurrentLine, SUM_COL), Excel.Range).Address(False, False))
+                StartRange.Cells(CurrentLine, SUM_COL - 1).Value2 = LABEL_SUM
+                CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Formula = $"=SUM({SUM_COL_LETTER}{FirstLine}:{SUM_COL_LETTER}{LastLine})"
+                CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Style = "SumStyle"
+                ImportantCells.Item(Year).Add(Key, CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Address(False, False))
                 CurrentLine += 1
             End If
         Next
     End Sub
 
     Private Sub DumpHeaders(startRange As Excel.Range, currentLine As Integer)
-        For NumCol As Integer = 1 To 12
-            Dim Cell As Excel.Range = CType(startRange.Item(currentLine, NumCol), Excel.Range)
+        For NumCol As Integer = 1 To HEADERS.Count
+            Dim Cell As Excel.Range = CType(startRange.Cells(currentLine, NumCol), Excel.Range)
             Cell.Value2 = HEADERS.Item(NumCol - 1)
             Cell.Style = "HeaderStyle"
         Next
