@@ -344,6 +344,9 @@ Public Class ThisAddIn
         Next
         CDDWorkbook.Close()
     End Sub
+    ''' <summary>
+    ''' Extracts Data from Excel files and merge them into an EDC.
+    ''' </summary>
     Private Sub DoExtractAndMerge()
         ProgressDialog.ProgressTraitement.Maximum = CInt(PROGRESS_REFERENCE)
         ProgressDialog.ProgressTraitement.Minimum = 0
