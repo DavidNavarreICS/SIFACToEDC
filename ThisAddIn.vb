@@ -27,7 +27,8 @@ Public Class ThisAddIn
     Private ReadOnly ProgressDialog As New ExecutionStatus
     Private ReadOnly Data As New Dictionary(Of Integer, ExtractedData)
     Private ReadOnly AllWorksheets As New Dictionary(Of Integer, Excel.Worksheet)
-    Private Const KEY_ORDER As String = "Commandes"
+    Private Const KEY_FONCT As String = "Fonctionnement"
+    Private Const KEY_INVEST As String = "Investissement"
     Private Const KEY_MISSION As String = "Missions"
     Private Const KEY_SALARY As String = "Salaires"
     Private Const SUM_COL As Integer = 6
@@ -50,7 +51,8 @@ Public Class ThisAddIn
     "D. Piéce F",
     "D. compt.",
     "Nº pièce",
-    "Commentaires"
+    "Commentaires",
+    "Provenance de la ligne"
     }
     Private Sub ThisAddIn_Startup() Handles Me.Startup
 
@@ -98,7 +100,6 @@ Public Class ThisAddIn
         Next
 
         Dim testWorksheet As Excel.Worksheet = ExistingSheets.Item(KEY_SHEET_YEARS).Values().ElementAt(1)
-        Debug.WriteLine(testWorksheet.Name)
         For Each FooRange As Excel.Range In testWorksheet.UsedRange.Rows
             If FooRange.Cells(1, 2).value2 = "COMMANDE" Then
                 Dim Line As BookLine = ReadLine(FooRange, 1)
@@ -204,15 +205,21 @@ Public Class ThisAddIn
                     BaseRange.Offset(4, CurrentCol + 2).Value = 0
                 End If
                 BaseRange.Offset(4, CurrentCol + 2).Style = "RecapNumberStyle3"
-                If ImportantCells.Item(Year).ContainsKey(KEY_ORDER) And ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
-                    BaseRange.Offset(5, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_ORDER)}+'{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
-                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_ORDER) Then
-                    BaseRange.Offset(5, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_ORDER)}"
-                Else
+                If ImportantCells.Item(Year).ContainsKey(KEY_FONCT) And ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
+                    BaseRange.Offset(5, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_FONCT)}+'{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
+                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_FONCT) Then
+                    BaseRange.Offset(5, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_FONCT)}"
+                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
                     BaseRange.Offset(5, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
+                Else
+                    BaseRange.Offset(5, CurrentCol + 2).Value = 0
                 End If
                 BaseRange.Offset(5, CurrentCol + 2).Style = "RecapNumberStyle3"
-                BaseRange.Offset(6, CurrentCol + 2).Value = 0
+                If ImportantCells.Item(Year).ContainsKey(KEY_INVEST) Then
+                    BaseRange.Offset(6, CurrentCol + 2).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_INVEST)}"
+                Else
+                    BaseRange.Offset(6, CurrentCol + 2).Value = 0
+                End If
                 BaseRange.Offset(6, CurrentCol + 2).Style = "RecapNumberStyle3"
                 BaseRange.Offset(7, CurrentCol + 2).Formula = $"=SUM({BaseRange.Offset(4, CurrentCol + 2).Address(False, False)}:{BaseRange.Offset(6, CurrentCol + 2).Address(False, False)})"
                 BaseRange.Offset(7, CurrentCol + 2).Style = "RecapNumberStyle3"
@@ -241,15 +248,21 @@ Public Class ThisAddIn
                     BaseRange.Offset(4, CurrentCol).Value = 0
                 End If
                 BaseRange.Offset(4, CurrentCol).Style = "RecapNumberStyle"
-                If ImportantCells.Item(Year).ContainsKey(KEY_ORDER) And ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
-                    BaseRange.Offset(5, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_ORDER)}+'{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
-                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_ORDER) Then
-                    BaseRange.Offset(5, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_ORDER)}"
-                Else
+                If ImportantCells.Item(Year).ContainsKey(KEY_FONCT) And ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
+                    BaseRange.Offset(5, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_FONCT)}+'{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
+                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_FONCT) Then
+                    BaseRange.Offset(5, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_FONCT)}"
+                ElseIf ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
                     BaseRange.Offset(5, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_MISSION)}"
+                Else
+                    BaseRange.Offset(5, CurrentCol).Value = 0
                 End If
                 BaseRange.Offset(5, CurrentCol).Style = "RecapNumberStyle"
-                BaseRange.Offset(6, CurrentCol).Value = 0
+                If ImportantCells.Item(Year).ContainsKey(KEY_INVEST) Then
+                    BaseRange.Offset(6, CurrentCol).Formula = $"='{Year}'!{ImportantCells.Item(Year).Item(KEY_INVEST)}"
+                Else
+                    BaseRange.Offset(6, CurrentCol).Value = 0
+                End If
                 BaseRange.Offset(6, CurrentCol).Style = "RecapNumberStyle"
                 BaseRange.Offset(7, CurrentCol).Formula = $"=SUM({BaseRange.Offset(4, CurrentCol).Address(False, False)}:{BaseRange.Offset(6, CurrentCol).Address(False, False)})"
                 BaseRange.Offset(7, CurrentCol).Style = "RecapNumberStyle2"
@@ -331,7 +344,8 @@ Public Class ThisAddIn
                     .J_DatePce = "",
                     .K_DCompt = Nothing,
                     .L_NumPiece = "",
-                    .M_Comment = ""
+                    .M_Comment = "",
+                    .N_From = ""
                 }
                 Dim Year As Integer = CInt(CDDWorksheet.Range($"C{NumRow}").Value2)
                 If CDDMap.ContainsKey(Year) Then
@@ -415,6 +429,18 @@ Public Class ThisAddIn
         If Not ContainsStyle("HeaderStyle") Then
             Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyle")
             NewStyle.Interior.Color = RGB(102, 102, 153)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
+        End If
+
+        If Not ContainsStyle("HeaderStyleComment") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyleComment")
+            NewStyle.Interior.Color = RGB(255, 177, 63)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
+        End If
+
+        If Not ContainsStyle("HeaderStyleFrom") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyleFrom")
+            NewStyle.Interior.Color = RGB(209, 54, 33)
             NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
         End If
 
@@ -603,83 +629,99 @@ Public Class ThisAddIn
     End Sub
 
     Private Sub AutoFit(newWorsheet As Excel.Worksheet)
-        newWorsheet.Range("A:L").EntireColumn.AutoFit()
+        newWorsheet.Range("A:N").EntireColumn.AutoFit()
     End Sub
 
     Private Sub FeedWorkSheet(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_ORDER, New List(Of ExtractedData.BookLine)},
+            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
             {KEY_MISSION, New List(Of ExtractedData.BookLine)},
             {KEY_SALARY, New List(Of ExtractedData.BookLine)}
         }
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year).Invests)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
-        MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
-        Dump(MergedData, NewWorsheet, Year)
+        If CDDMap.ContainsKey(Year) Then
+            MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+        End If
+        Dump(MergedData, NewWorsheet, Year, False)
     End Sub
 
     Private Sub FeedWorkSheetWithPendings(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_ORDER, New List(Of ExtractedData.BookLine)},
+            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
             {KEY_MISSION, New List(Of ExtractedData.BookLine)},
             {KEY_SALARY, New List(Of ExtractedData.BookLine)}
         }
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year - 1).PendingOrders)
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year - 1).PendingOrders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year - 1).PendingInvests)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year).Invests)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year - 1).PendingMissions)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
-        MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
-        Dump(MergedData, NewWorsheet, Year)
+        If CDDMap.ContainsKey(Year) Then
+            MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+        End If
+        Dump(MergedData, NewWorsheet, Year, False)
     End Sub
     Private Sub FeedWorkSheetWithAllPendings(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_ORDER, New List(Of ExtractedData.BookLine)},
+            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
             {KEY_MISSION, New List(Of ExtractedData.BookLine)},
             {KEY_SALARY, New List(Of ExtractedData.BookLine)}
         }
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year - 1).PendingOrders)
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year).PendingOrders)
-        MergedData.Item(KEY_ORDER).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year - 1).PendingOrders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).PendingOrders)
+        MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year - 1).PendingInvests)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year).PendingInvests)
+        MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year).Invests)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year - 1).PendingMissions)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).PendingMissions)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
-        MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
-        Dump(MergedData, NewWorsheet, Year)
+        If CDDMap.ContainsKey(Year) Then
+            MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+        End If
+        Dump(MergedData, NewWorsheet, Year, True)
     End Sub
-    Private Sub Dump(mergedData As Dictionary(Of String, List(Of ExtractedData.BookLine)), newWorsheet As Excel.Worksheet, Year As Integer)
+    Private Sub Dump(mergedData As Dictionary(Of String, List(Of ExtractedData.BookLine)), newWorsheet As Excel.Worksheet, Year As Integer, FullHeader As Boolean)
         ImportantCells.Add(Year, New Dictionary(Of String, String))
         Dim CurrentLine As Integer = 1
         Dim StartRange As Excel.Range = newWorsheet.Range("A1")
         For Each Key In mergedData.Keys
             Dim LineList As List(Of BookLine) = mergedData.Item(Key)
-            CurrentLine += 1
-            DumpHeaders(StartRange, CurrentLine)
-            CurrentLine += 1
-            Dim FirstLine As Integer = CurrentLine
-            For Each Line As BookLine In LineList
-                StartRange.Cells(CurrentLine, 1).Value2 = Line.A_Cptegen
-                StartRange.Cells(CurrentLine, 2).Value2 = Line.B_Rubrique
-                StartRange.Cells(CurrentLine, 3).Value2 = Line.C_NumeroFlux
-                StartRange.Cells(CurrentLine, 4).Value2 = Line.D_Nom
-                StartRange.Cells(CurrentLine, 5).Value2 = Line.E_Libelle
-                If Line.F_MntEngHTR = 0 Then
-                    StartRange.Cells(CurrentLine, 6).Value2 = Line.G_MontantPa
-                Else
-                    StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
-                End If
-                CType(StartRange.Cells(CurrentLine, 6), Excel.Range).Style = "MtEngStyle"
-                StartRange.Cells(CurrentLine, 7).Value2 = Line.G_MontantPa
-                CType(StartRange.Cells(CurrentLine, 7), Excel.Range).Style = "MtPAStyle"
-                StartRange.Cells(CurrentLine, 8).Value2 = Line.H_Rapprochmt
-                StartRange.Cells(CurrentLine, 9).Value2 = Line.I_RefFactF
-                StartRange.Cells(CurrentLine, 10).Value2 = Line.J_DatePce
-                StartRange.Cells(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
-                StartRange.Cells(CurrentLine, 12).Value2 = Line.L_NumPiece
-                StartRange.Cells(CurrentLine, 13).Value2 = Line.M_Comment
+            If LineList.Count > 0 Then
                 CurrentLine += 1
-                Globals.ThisAddIn.NextStep()
-            Next
-            If CurrentLine <> FirstLine Then
+                DumpHeaders(StartRange, CurrentLine, FullHeader)
+                CurrentLine += 1
+                Dim FirstLine As Integer = CurrentLine
+                For Each Line As BookLine In LineList
+                    StartRange.Cells(CurrentLine, 1).Value2 = Line.A_Cptegen
+                    StartRange.Cells(CurrentLine, 2).Value2 = Line.B_Rubrique
+                    StartRange.Cells(CurrentLine, 3).Value2 = Line.C_NumeroFlux
+                    StartRange.Cells(CurrentLine, 4).Value2 = Line.D_Nom
+                    StartRange.Cells(CurrentLine, 5).Value2 = Line.E_Libelle
+                    If Line.F_MntEngHTR = 0 Then
+                        StartRange.Cells(CurrentLine, 6).Value2 = Line.G_MontantPa
+                    Else
+                        StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
+                    End If
+                    CType(StartRange.Cells(CurrentLine, 6), Excel.Range).Style = "MtEngStyle"
+                    StartRange.Cells(CurrentLine, 7).Value2 = Line.G_MontantPa
+                    CType(StartRange.Cells(CurrentLine, 7), Excel.Range).Style = "MtPAStyle"
+                    StartRange.Cells(CurrentLine, 8).Value2 = Line.H_Rapprochmt
+                    StartRange.Cells(CurrentLine, 9).Value2 = Line.I_RefFactF
+                    StartRange.Cells(CurrentLine, 10).Value2 = Line.J_DatePce
+                    StartRange.Cells(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
+                    StartRange.Cells(CurrentLine, 12).Value2 = Line.L_NumPiece
+                    StartRange.Cells(CurrentLine, 13).Value2 = Line.M_Comment
+                    StartRange.Cells(CurrentLine, 14).Value2 = Line.N_From
+                    CurrentLine += 1
+                    Globals.ThisAddIn.NextStep()
+                Next
                 Dim LastLine As Integer = CurrentLine - 1
                 StartRange.Cells(CurrentLine, SUM_COL - 1).Value2 = LABEL_SUM
                 CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Formula = $"=SUM({SUM_COL_LETTER}{FirstLine}:{SUM_COL_LETTER}{LastLine})"
@@ -690,17 +732,25 @@ Public Class ThisAddIn
         Next
     End Sub
 
-    Private Sub DumpHeaders(startRange As Excel.Range, currentLine As Integer)
-        For NumCol As Integer = 1 To HEADERS.Count
+    Private Sub DumpHeaders(startRange As Excel.Range, currentLine As Integer, FullHeader As Boolean)
+        For NumCol As Integer = 1 To HEADERS.Count - 2
             Dim Cell As Excel.Range = CType(startRange.Cells(currentLine, NumCol), Excel.Range)
             Cell.Value2 = HEADERS.Item(NumCol - 1)
             Cell.Style = "HeaderStyle"
         Next
+        Dim CellComment As Excel.Range = CType(startRange.Cells(currentLine, HEADERS.Count - 1), Excel.Range)
+        CellComment.Value2 = HEADERS.Item(HEADERS.Count - 2)
+        CellComment.Style = "HeaderStyleComment"
+        If FullHeader Then
+            Dim CellFrom As Excel.Range = CType(startRange.Cells(currentLine, HEADERS.Count), Excel.Range)
+            CellFrom.Value2 = HEADERS.Item(HEADERS.Count - 1)
+            CellFrom.Style = "HeaderStyleFrom"
+        End If
     End Sub
 
     Public Sub NextStep()
         CurrentProgrees += ProgressIncrement
-        ProgressDialog.ProgressTraitement.Value = CInt(CurrentProgrees)
+        ProgressDialog.ProgressTraitement.Value = Math.Min(CInt(CurrentProgrees), PROGRESS_REFERENCE)
     End Sub
     Public Sub SetProgress(ProgressValue As Double)
         CurrentProgrees = ProgressValue

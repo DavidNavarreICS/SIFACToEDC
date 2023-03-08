@@ -43,6 +43,7 @@ Public Class ExtractedData
         Public K_DCompt As DateCompte
         Public L_NumPiece As String
         Public M_Comment As String
+        Public N_From As String
 
         Public Function CompareTo(other As BookLine) As Integer Implements IComparable(Of BookLine).CompareTo
             If K_DCompt IsNot Nothing Then
@@ -66,13 +67,20 @@ Public Class ExtractedData
     Private Const CASE_COMMANDE_PAIEMENT As String = "COMMANDE/FACTURE/PAIEMENT"
     Private Const CASE_COMMANDE_AJUSTEMENT As String = "COMMANDES/FACT-AJUSTEMENT/PAIEMENT"
     Private Const CASE_COMMANDE As String = "COMMANDE"
+    Private Const CASE_COMMANDE_PAIEMENT_INVEST As String = "COMMANDE_INVEST/FACTURE/PAIEMENT"
+    Private Const CASE_COMMANDE_AJUSTEMENT_INVEST As String = "COMMANDES_INVEST/FACT-AJUSTEMENT/PAIEMENT"
+    Private Const CASE_COMMANDE_INVEST As String = "COMMANDE_INVEST"
     Private Const CASE_MISSION As String = "MISSION"
     Private Const CASE_MISSION_PAIEMENT As String = "MISSION/COMPTABILISATION/PAIEMENT"
     Private Const CASE_REIMPUTATION As String = "REIMPUTATION"
     Private Const CASE_AVOIR_PAIEMENT As String = "COMMANDE/AVOIR/PAIEMENT"
+    Private Const CASE_REIMPUTATION_INVEST As String = "REIMPUTATION_INVEST"
+    Private Const CASE_AVOIR_PAIEMENT_INVEST As String = "COMMANDE_INVEST/AVOIR/PAIEMENT"
     Private Const CASE_UNUSED As String = "UNUSED"
-    Private Const KEY_COMMANDE As String = "COMMANDE"
-    Private Const KEY_COMMANDE_PENDING As String = "COMMANDE/PENDING"
+    Private Const KEY_ORDER As String = "COMMANDE"
+    Private Const KEY_ORDER_PENDING As String = "COMMANDE/PENDING"
+    Private Const KEY_INVEST As String = "INVESTISSEMENT"
+    Private Const KEY_INVEST_PENDING As String = "INVESTISSEMENT/PENDING"
     Private Const KEY_MISSION As String = "MISSION"
     Private Const KEY_MISSION_PENDING As String = "MISSION/PENDING"
     Private Const KEY_TRASH As String = "TRASH"
@@ -86,7 +94,12 @@ Public Class ExtractedData
     Public SheetYear As Integer
     Public ReadOnly Property Orders As List(Of BookLine)
         Get
-            Return ReducedTable.Item(KEY_COMMANDE)
+            Return ReducedTable.Item(KEY_ORDER)
+        End Get
+    End Property
+    Public ReadOnly Property Invests As List(Of BookLine)
+        Get
+            Return ReducedTable.Item(KEY_INVEST)
         End Get
     End Property
     Public ReadOnly Property Missions As List(Of BookLine)
@@ -96,7 +109,12 @@ Public Class ExtractedData
     End Property
     Public ReadOnly Property PendingOrders As List(Of BookLine)
         Get
-            Return ReducedTable.Item(KEY_COMMANDE_PENDING)
+            Return ReducedTable.Item(KEY_ORDER_PENDING)
+        End Get
+    End Property
+    Public ReadOnly Property PendingInvests As List(Of BookLine)
+        Get
+            Return ReducedTable.Item(KEY_INVEST_PENDING)
         End Get
     End Property
     Public ReadOnly Property PendingMissions As List(Of BookLine)
@@ -129,8 +147,10 @@ Public Class ExtractedData
         TrashTable.Clear()
         FullTable.Clear()
         ReducedTable.Clear()
-        ReducedTable.Add(KEY_COMMANDE_PENDING, New List(Of BookLine))
-        ReducedTable.Add(KEY_COMMANDE, New List(Of BookLine))
+        ReducedTable.Add(KEY_ORDER_PENDING, New List(Of BookLine))
+        ReducedTable.Add(KEY_ORDER, New List(Of BookLine))
+        ReducedTable.Add(KEY_INVEST_PENDING, New List(Of BookLine))
+        ReducedTable.Add(KEY_INVEST, New List(Of BookLine))
         ReducedTable.Add(KEY_MISSION_PENDING, New List(Of BookLine))
         ReducedTable.Add(KEY_MISSION, New List(Of BookLine))
         TrashTable.Add(KEY_TRASH, New List(Of BookLine))
@@ -185,9 +205,14 @@ Public Class ExtractedData
             {CASE_COMMANDE, New List(Of BookLine)},
             {CASE_COMMANDE_AJUSTEMENT, New List(Of BookLine)},
             {CASE_COMMANDE_PAIEMENT, New List(Of BookLine)},
+            {CASE_AVOIR_PAIEMENT_INVEST, New List(Of BookLine)},
+            {CASE_COMMANDE_INVEST, New List(Of BookLine)},
+            {CASE_COMMANDE_AJUSTEMENT_INVEST, New List(Of BookLine)},
+            {CASE_COMMANDE_PAIEMENT_INVEST, New List(Of BookLine)},
             {CASE_MISSION, New List(Of BookLine)},
             {CASE_MISSION_PAIEMENT, New List(Of BookLine)},
             {CASE_REIMPUTATION, New List(Of BookLine)},
+            {CASE_REIMPUTATION_INVEST, New List(Of BookLine)},
             {CASE_UNUSED, New List(Of BookLine)}
             }
             Dim MAX_K_DCompt As DateCompte = FullTable.Item(Key).Max().K_DCompt
@@ -196,13 +221,25 @@ Public Class ExtractedData
                 Select Case Kind
                     Case CASE_COMMANDE_PAIEMENT
                         Line.K_DCompt = MAX_K_DCompt
-                        AddLineToTable(CASE_COMMANDE_PAIEMENT, PreparedLines, Line)
+                        If Line.A_Cptegen.Trim.StartsWith("2") Then
+                            AddLineToTable(CASE_COMMANDE_PAIEMENT_INVEST, PreparedLines, Line)
+                        Else
+                            AddLineToTable(CASE_COMMANDE_PAIEMENT, PreparedLines, Line)
+                        End If
                     Case CASE_COMMANDE_AJUSTEMENT
                         Line.K_DCompt = MAX_K_DCompt
-                        AddLineToTable(CASE_COMMANDE_AJUSTEMENT, PreparedLines, Line)
+                        If Line.A_Cptegen.Trim.StartsWith("2") Then
+                            AddLineToTable(CASE_COMMANDE_AJUSTEMENT_INVEST, PreparedLines, Line)
+                        Else
+                            AddLineToTable(CASE_COMMANDE_AJUSTEMENT, PreparedLines, Line)
+                        End If
                     Case CASE_COMMANDE
                         Line.K_DCompt = MAX_K_DCompt
-                        AddLineToTable(CASE_COMMANDE, PreparedLines, Line)
+                        If Line.A_Cptegen.Trim.StartsWith("2") Then
+                            AddLineToTable(CASE_COMMANDE_INVEST, PreparedLines, Line)
+                        Else
+                            AddLineToTable(CASE_COMMANDE, PreparedLines, Line)
+                        End If
                     Case CASE_MISSION_PAIEMENT
                         Line.K_DCompt = MAX_K_DCompt
                         AddLineToTable(CASE_MISSION_PAIEMENT, PreparedLines, Line)
@@ -210,9 +247,17 @@ Public Class ExtractedData
                         Line.K_DCompt = MAX_K_DCompt
                         AddLineToTable(CASE_MISSION, PreparedLines, Line)
                     Case CASE_REIMPUTATION
-                        AddLineToTable(CASE_REIMPUTATION, PreparedLines, Line)
+                        If Line.A_Cptegen.Trim.StartsWith("2") Then
+                            AddLineToTable(CASE_REIMPUTATION_INVEST, PreparedLines, Line)
+                        Else
+                            AddLineToTable(CASE_REIMPUTATION, PreparedLines, Line)
+                        End If
                     Case CASE_AVOIR_PAIEMENT
-                        AddLineToTable(CASE_AVOIR_PAIEMENT, PreparedLines, Line)
+                        If Line.A_Cptegen.Trim.StartsWith("2") Then
+                            AddLineToTable(CASE_AVOIR_PAIEMENT_INVEST, PreparedLines, Line)
+                        Else
+                            AddLineToTable(CASE_AVOIR_PAIEMENT, PreparedLines, Line)
+                        End If
                     Case Else
                         AddLineToTable(CASE_UNUSED, PreparedLines, Line)
                 End Select
@@ -224,8 +269,8 @@ Public Class ExtractedData
     Private Sub ReduceLines(previousExtraction As ExtractedData)
         If previousExtraction IsNot Nothing Then
             For Each Line As BookLine In previousExtraction.PendingOrders
-                If Line.M_Comment = "" Then
-                    Line.M_Comment = $"Ligne venant de {previousExtraction.SheetYear}"
+                If Line.N_From = "" Then
+                    Line.N_From = $"Ligne venant de {previousExtraction.SheetYear}"
                 End If
                 If PreReducedTable.ContainsKey(Line.C_NumeroFlux) Then
                     PreReducedTable.Item(Line.C_NumeroFlux).Item(CASE_COMMANDE).Add(Line)
@@ -236,8 +281,8 @@ Public Class ExtractedData
             Next
             previousExtraction.PendingOrders.Clear()
             For Each Line As BookLine In previousExtraction.PendingMissions
-                If Line.M_Comment = "" Then
-                    Line.M_Comment = $"Ligne venant de {previousExtraction.SheetYear}"
+                If Line.N_From = "" Then
+                    Line.N_From = $"Ligne venant de {previousExtraction.SheetYear}"
                 End If
                 If PreReducedTable.ContainsKey(Line.C_NumeroFlux) Then
                     PreReducedTable.Item(Line.C_NumeroFlux).Item(CASE_MISSION).Add(Line)
@@ -247,6 +292,18 @@ Public Class ExtractedData
                 End If
             Next
             previousExtraction.PendingMissions.Clear()
+            For Each Line As BookLine In previousExtraction.PendingInvests
+                If Line.N_From = "" Then
+                    Line.N_From = $"Ligne venant de {previousExtraction.SheetYear}"
+                End If
+                If PreReducedTable.ContainsKey(Line.C_NumeroFlux) Then
+                    PreReducedTable.Item(Line.C_NumeroFlux).Item(CASE_AVOIR_PAIEMENT_INVEST).Add(Line)
+                Else
+                    PreReducedTable.Add(Line.C_NumeroFlux, New Dictionary(Of String, List(Of BookLine)) From {
+                    {CASE_COMMANDE_INVEST, New List(Of BookLine) From {Line}}})
+                End If
+            Next
+            previousExtraction.PendingInvests.Clear()
         End If
         For Each Key As String In PreReducedTable.Keys
             Dim CommandePaiementFound As Boolean = PreReducedTable.Item(Key).ContainsKey(CASE_COMMANDE_PAIEMENT)
@@ -257,16 +314,29 @@ Public Class ExtractedData
             If MissionPaiementFound Then
                 MissionPaiementFound = PreReducedTable.Item(Key).Item(CASE_MISSION_PAIEMENT).Count > 0
             End If
+            Dim InvestissementPaiementFound As Boolean = PreReducedTable.Item(Key).ContainsKey(CASE_COMMANDE_PAIEMENT_INVEST)
+            If InvestissementPaiementFound Then
+                InvestissementPaiementFound = PreReducedTable.Item(Key).Item(CASE_COMMANDE_PAIEMENT_INVEST).Count > 0
+            End If
             Dim PreparedLines As Dictionary(Of String, List(Of BookLine)) = PreReducedTable.Item(Key)
 
             If CommandePaiementFound Then
-                ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_COMMANDE_PAIEMENT))
+                ReducedTable.Item(KEY_ORDER).AddRange(PreparedLines.Item(CASE_COMMANDE_PAIEMENT))
                 TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_COMMANDE))
             ElseIf PreparedLines.ContainsKey(CASE_COMMANDE) Then
-                ReducedTable.Item(KEY_COMMANDE_PENDING).AddRange(PreparedLines.Item(CASE_COMMANDE))
+                ReducedTable.Item(KEY_ORDER_PENDING).AddRange(PreparedLines.Item(CASE_COMMANDE))
+            End If
+            If InvestissementPaiementFound Then
+                ReducedTable.Item(KEY_INVEST).AddRange(PreparedLines.Item(CASE_COMMANDE_PAIEMENT_INVEST))
+                TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_COMMANDE_INVEST))
+            ElseIf PreparedLines.ContainsKey(CASE_COMMANDE_INVEST) Then
+                ReducedTable.Item(KEY_INVEST_PENDING).AddRange(PreparedLines.Item(CASE_COMMANDE_INVEST))
             End If
             If PreparedLines.ContainsKey(CASE_COMMANDE_AJUSTEMENT) Then
-                ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_COMMANDE_AJUSTEMENT))
+                ReducedTable.Item(KEY_ORDER).AddRange(PreparedLines.Item(CASE_COMMANDE_AJUSTEMENT))
+            End If
+            If PreparedLines.ContainsKey(CASE_COMMANDE_AJUSTEMENT_INVEST) Then
+                ReducedTable.Item(KEY_INVEST).AddRange(PreparedLines.Item(CASE_COMMANDE_AJUSTEMENT_INVEST))
             End If
             If MissionPaiementFound Then
                 ReducedTable.Item(KEY_MISSION).AddRange(PreparedLines.Item(CASE_MISSION_PAIEMENT))
@@ -275,10 +345,16 @@ Public Class ExtractedData
                 ReducedTable.Item(KEY_MISSION_PENDING).AddRange(PreparedLines.Item(CASE_MISSION))
             End If
             If PreparedLines.ContainsKey(CASE_REIMPUTATION) Then
-                ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_REIMPUTATION))
+                ReducedTable.Item(KEY_ORDER).AddRange(PreparedLines.Item(CASE_REIMPUTATION))
+            End If
+            If PreparedLines.ContainsKey(CASE_REIMPUTATION_INVEST) Then
+                ReducedTable.Item(KEY_INVEST).AddRange(PreparedLines.Item(CASE_REIMPUTATION_INVEST))
             End If
             If PreparedLines.ContainsKey(CASE_AVOIR_PAIEMENT) Then
-                ReducedTable.Item(KEY_COMMANDE).AddRange(PreparedLines.Item(CASE_AVOIR_PAIEMENT))
+                ReducedTable.Item(KEY_ORDER).AddRange(PreparedLines.Item(CASE_AVOIR_PAIEMENT))
+            End If
+            If PreparedLines.ContainsKey(CASE_AVOIR_PAIEMENT_INVEST) Then
+                ReducedTable.Item(KEY_INVEST).AddRange(PreparedLines.Item(CASE_AVOIR_PAIEMENT_INVEST))
             End If
             If PreparedLines.ContainsKey(CASE_UNUSED) Then
                 TrashTable.Item(KEY_TRASH).AddRange(PreparedLines.Item(CASE_UNUSED))
@@ -376,7 +452,8 @@ Public Class ExtractedData
             .J_DatePce = FullRange.Cells(RowNum, 10).Value2,
             .K_DCompt = GetDateCompte(FullRange.Cells(RowNum, 11).Value2),
             .L_NumPiece = FullRange.Cells(RowNum, 12).Value2,
-            .M_Comment = ""
+            .M_Comment = "",
+            .N_From = ""
         }
     End Function
 
