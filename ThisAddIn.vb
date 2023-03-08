@@ -1,4 +1,5 @@
 ﻿Imports System.Diagnostics
+Imports System.Globalization
 Imports System.IO
 Imports Microsoft.Office.Interop.Excel
 Imports SIFACToEDC.ExtractedData
@@ -54,6 +55,46 @@ Public Class ThisAddIn
     "Commentaires",
     "Provenance de la ligne"
     }
+    Private Class FooLine
+        Public ReadOnly data As New List(Of String)
+
+        Public Shared Function ReadLine(FullRange As Range, RowNum As Integer) As FooLine
+            Dim answer As New FooLine
+            For I As Integer = 1 To FullRange.Columns.Count
+                answer.data.Add(FullRange.Cells(RowNum, 1).Value2)
+            Next
+            Return answer
+        End Function
+        Private Shared Function GetDateCompte(TextValue As String) As DateCompte
+            If Not TextValue = "" Then
+                Return New DateCompte(TextValue)
+            Else
+                Return Nothing
+            End If
+        End Function
+
+        Private Shared Function GetNumber(FullRange As Range, RowNum As Integer, ColNum As Integer) As Double
+            Dim TextToConvert As String = FullRange.Cells(RowNum, ColNum).Value2
+            Dim IndexVirgule As Integer = TextToConvert.IndexOf(",")
+            Dim IndexPoint As Integer = TextToConvert.IndexOf(".")
+            If IndexPoint = -1 Then
+                'French format
+                Return Double.Parse(TextToConvert)
+            ElseIf IndexVirgule = -1 Then
+                'Invariant culture format
+                Return Double.Parse(TextToConvert, CultureInfo.InvariantCulture)
+            ElseIf IndexVirgule < IndexPoint Then
+                'Invariant culture format
+                Return Double.Parse(TextToConvert, CultureInfo.InvariantCulture)
+            Else
+                'Space format
+                Dim FirstSplit As String() = TextToConvert.Split(".")
+                Dim SecondSplit As String() = FirstSplit(1).Split(",")
+                Dim NewTextToConvert As String = FirstSplit(0) & "," & SecondSplit(0) & "." & SecondSplit(1)
+                Return Double.Parse(NewTextToConvert, CultureInfo.InvariantCulture)
+            End If
+        End Function
+    End Class
     Private Sub ThisAddIn_Startup() Handles Me.Startup
 
     End Sub
@@ -71,8 +112,8 @@ Public Class ThisAddIn
         CurrentWorkbook = CreateCopy(CType(Me.Application.ActiveWorkbook, Excel.Workbook))
         SummaryWorkSheet = CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)
         RecapNumber = SummaryWorkSheet.Range("A2").Value2
-        'GetExistingData()
-        DoIntegration()
+        GetExistingData()
+        'DoIntegration()
     End Sub
 
     Private Sub GetExistingData()
@@ -101,8 +142,9 @@ Public Class ThisAddIn
 
         Dim testWorksheet As Excel.Worksheet = ExistingSheets.Item(KEY_SHEET_YEARS).Values().ElementAt(1)
         For Each FooRange As Excel.Range In testWorksheet.UsedRange.Rows
+            Debug.WriteLine($"--{FooRange.Cells(1, 1).value2}")
             If FooRange.Cells(1, 2).value2 = "COMMANDE" Then
-                Dim Line As BookLine = ReadLine(FooRange, 1)
+                Dim Line As FooLine = FooLine.ReadLine(FooRange, 1)
             End If
         Next
     End Sub
