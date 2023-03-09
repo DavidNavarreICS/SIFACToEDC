@@ -35,12 +35,12 @@
     <InstallUrl />
     <TargetCulture>fr</TargetCulture>
     <ApplicationVersion>1.0.0.0</ApplicationVersion>
-    <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
-    <UpdateEnabled>true</UpdateEnabled>
-    <UpdateInterval>7</UpdateInterval>
+    <AutoIncrementApplicationRevision>false</AutoIncrementApplicationRevision>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateInterval>0</UpdateInterval>
     <UpdateIntervalUnits>days</UpdateIntervalUnits>
     <ProductName>SIFACToEDC</ProductName>
-    <PublisherName />
+    <PublisherName>David Navarre</PublisherName>
     <SupportUrl />
     <FriendlyName>SIFACToEDC</FriendlyName>
     <OfficeApplicationDescription />
@@ -226,6 +226,7 @@
     <EmbeddedResource Include="RibbonEDC.resx">
       <DependentUpon>RibbonEDC.vb</DependentUpon>
     </EmbeddedResource>
+    <None Include="SIFACToEDC_1_TemporaryKey.pfx" />
     <None Include="SIFACToEDC_TemporaryKey.pfx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.vb</DependentUpon>
@@ -272,11 +273,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>
-    </ManifestKeyFile>
+    <ManifestKeyFile>SIFACToEDC_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>E74F5CB8EDCDA54C413BF35EB1B9ED05ED86E25A</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>92C57A764EA005B6B7211E59C6F788B7174B2607</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a Visual Basic project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
