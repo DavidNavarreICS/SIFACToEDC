@@ -76,7 +76,22 @@ jobs:
     # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.0.2
-
+    
+    - name: dotnet-sonar-scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # uses: chill-viking/dotnet-sonar-scanner@56713d7a4b5cc15f82a60ec869e13bf9eaa59fe5
+      uses: chill-viking/dotnet-sonar-scanner@v2.0.0
+      with:
+        # Key for Sonar project
+        sonar-project-key: DavidNavarreICS_SIFACToEDC
+        # Key for Sonar organisation
+        sonar-org-key: davidnavarreics
+        token: ${{ secrets.GITHUB_TOKEN }}
+        sonar-token: ${{ secrets.SONAR_TOKEN }}
+        dotnet-version: 7.0.x
+    
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Restore the application
       run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
