@@ -113,7 +113,7 @@ Public Class ThisAddIn
         SummaryWorkSheet = CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)
         RecapNumber = SummaryWorkSheet.Range("A2").Value2
         GetExistingData()
-        'DoIntegration()
+        DoIntegration()
     End Sub
 
     Private Sub GetExistingData()
@@ -123,7 +123,7 @@ Public Class ThisAddIn
                     {CType(CurrentWorkbook.Sheets(2), Excel.Worksheet).Name, CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)}})
         For I As Integer = 3 To CurrentWorkbook.Sheets.Count
             Dim worksheet As Worksheet = CType(CurrentWorkbook.Sheets(I), Excel.Worksheet)
-            If IsNumeric(worksheet.Name) Then
+            If worksheet.Name Like "####" Then
                 If ExistingSheets.ContainsKey(KEY_SHEET_YEARS) Then
                     ExistingSheets.Item(KEY_SHEET_YEARS).Add(worksheet.Name, worksheet)
                 Else
@@ -139,15 +139,16 @@ Public Class ThisAddIn
                 End If
             End If
         Next
-
-        Dim testWorksheet As Excel.Worksheet = ExistingSheets.Item(KEY_SHEET_YEARS).Values().ElementAt(1)
-        For Each FooRange As Excel.Range In testWorksheet.UsedRange.Rows
-            Debug.WriteLine($"--{FooRange.Cells(1, 1).value2}")
-            If FooRange.Cells(1, 2).value2 = "COMMANDE" Then
-                Dim Line As FooLine = FooLine.ReadLine(FooRange, 1)
-            End If
+        Application.DisplayAlerts = False
+        For Each yearSheet As Excel.Worksheet In ExistingSheets.Item(KEY_SHEET_YEARS).Values
+            yearSheet.Delete()
         Next
+        Application.DisplayAlerts = True
     End Sub
+
+    Private Function IsHeader(firstCell As Range) As Boolean
+        Return firstCell.Value2 <> "" And Not IsNumeric(firstCell.Value2)
+    End Function
 
     Public Sub DoIntegration()
         Dim dialog As Microsoft.Office.Core.FileDialog
@@ -172,7 +173,7 @@ Public Class ThisAddIn
     Private Sub PrepareRecap()
         NameStep("Préparation du récapitulatif")
         SummaryWorkSheet.Activate()
-        SummaryWorkSheet.Range("B18:BB27").Rows.Delete(XlDeleteShiftDirection.xlShiftToLeft)
+        SummaryWorkSheet.Range("B18:BB28").Rows.Delete(XlDeleteShiftDirection.xlShiftToLeft)
 
         Dim BaseRange As Excel.Range = SummaryWorkSheet.Range("B18")
         Dim TableCol As Excel.Range = SummaryWorkSheet.Range("B18:B25")
@@ -641,7 +642,9 @@ Public Class ThisAddIn
         Dim NewFileName As String = $"{Path.GetDirectoryName(AWorkbook.FullName)}{Path.DirectorySeparatorChar}{Path.GetFileNameWithoutExtension(AWorkbook.FullName)} - New version {DEST_NAME_EXTENSION}"
         AWorkbook.SaveCopyAs(NewFileName)
         Dim NewWorkbook As Excel.Workbook = Me.Application.Workbooks.Open(NewFileName)
+        Application.DisplayAlerts = False
         AWorkbook.Close()
+        Application.DisplayAlerts = True
         Return NewWorkbook
     End Function
 
