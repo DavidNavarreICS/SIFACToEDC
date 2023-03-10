@@ -95,6 +95,11 @@ Public Class ThisAddIn
             End If
         End Function
     End Class
+    Private Class SalaryLineComparison : Implements IComparer(Of BookLine)
+        Public Function Compare(x As BookLine, y As BookLine) As Integer Implements IComparer(Of BookLine).Compare
+            Return x.D_Nom.CompareTo(y.D_Nom)
+        End Function
+    End Class
     Private Sub ThisAddIn_Startup() Handles Me.Startup
 
     End Sub
@@ -118,9 +123,9 @@ Public Class ThisAddIn
 
     Private Sub GetExistingData()
         ExistingSheets.Add(KEY_SHEET_MODE_EMPLOI, New Dictionary(Of String, Excel.Worksheet) From {
-                    {CType(CurrentWorkbook.Sheets(1), Excel.Worksheet).Name, CType(CurrentWorkbook.Sheets(1), Excel.Worksheet)}})
+                {CType(CurrentWorkbook.Sheets(1), Excel.Worksheet).Name, CType(CurrentWorkbook.Sheets(1), Excel.Worksheet)}})
         ExistingSheets.Add(KEY_SHEET_RECAPITULATIF, New Dictionary(Of String, Excel.Worksheet) From {
-                    {CType(CurrentWorkbook.Sheets(2), Excel.Worksheet).Name, CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)}})
+                {CType(CurrentWorkbook.Sheets(2), Excel.Worksheet).Name, CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)}})
         For I As Integer = 3 To CurrentWorkbook.Sheets.Count
             Dim worksheet As Worksheet = CType(CurrentWorkbook.Sheets(I), Excel.Worksheet)
             If worksheet.Name Like "####" Then
@@ -128,14 +133,14 @@ Public Class ThisAddIn
                     ExistingSheets.Item(KEY_SHEET_YEARS).Add(worksheet.Name, worksheet)
                 Else
                     ExistingSheets.Add(KEY_SHEET_YEARS, New Dictionary(Of String, Excel.Worksheet) From {
-                    {worksheet.Name, worksheet}})
+                {worksheet.Name, worksheet}})
                 End If
             Else
                 If ExistingSheets.ContainsKey(KEY_SHEET_ELSE) Then
                     ExistingSheets.Item(KEY_SHEET_ELSE).Add(worksheet.Name, worksheet)
                 Else
                     ExistingSheets.Add(KEY_SHEET_ELSE, New Dictionary(Of String, Excel.Worksheet) From {
-                    {worksheet.Name, worksheet}})
+                {worksheet.Name, worksheet}})
                 End If
             End If
         Next
@@ -375,28 +380,28 @@ Public Class ThisAddIn
             Dim TempRecapNum As String = CDDWorksheet.Range($"Q{NumRow}").Value2
             If String.Equals(RecapNumber, TempRecapNum, StringComparison.OrdinalIgnoreCase) Then
                 Dim NewLine As New BookLine With {
-                    .A_Cptegen = "",
-                    .B_Rubrique = "SALAIRE",
-                    .C_NumeroFlux = CDDWorksheet.Range($"B{NumRow}").Value2,
-                    .D_Nom = CDDWorksheet.Range($"I{NumRow}").Value2,
-                    .E_Libelle = $"liasse du {Format(CDDWorksheet.Range($"D{NumRow}").Value, "dd/MM/yyyy")} au {Format(CDDWorksheet.Range($"E{NumRow}").Value, "dd/MM/yyyy")}",
-                    .F_MntEngHTR = CDbl(CDDWorksheet.Range($"N{NumRow}").Value2),
-                    .G_MontantPa = 0,
-                    .H_Rapprochmt = "",
-                    .I_RefFactF = "",
-                    .J_DatePce = "",
-                    .K_DCompt = Nothing,
-                    .L_NumPiece = "",
-                    .M_Comment = "",
-                    .N_From = ""
-                }
+                .A_Cptegen = "",
+                .B_Rubrique = "SALAIRE",
+                .C_NumeroFlux = CDDWorksheet.Range($"B{NumRow}").Value2,
+                .D_Nom = CDDWorksheet.Range($"I{NumRow}").Value2,
+                .E_Libelle = $"liasse du {Format(CDDWorksheet.Range($"D{NumRow}").Value, "dd/MM/yyyy")} au {Format(CDDWorksheet.Range($"E{NumRow}").Value, "dd/MM/yyyy")}",
+                .F_MntEngHTR = CDbl(CDDWorksheet.Range($"N{NumRow}").Value2),
+                .G_MontantPa = 0,
+                .H_Rapprochmt = "",
+                .I_RefFactF = "",
+                .J_DatePce = "",
+                .K_DCompt = Nothing,
+                .L_NumPiece = "",
+                .M_Comment = "",
+                .N_From = ""
+            }
                 Dim Year As Integer = CInt(CDDWorksheet.Range($"C{NumRow}").Value2)
                 If CDDMap.ContainsKey(Year) Then
                     CDDMap.Item(Year).Add(NewLine)
                 Else
                     Dim NewList As New List(Of BookLine) From {
-                        NewLine
-                    }
+                    NewLine
+                }
                     CDDMap.Add(Year, NewList)
                 End If
             End If
@@ -679,27 +684,28 @@ Public Class ThisAddIn
 
     Private Sub FeedWorkSheet(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
-            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
-            {KEY_MISSION, New List(Of ExtractedData.BookLine)},
-            {KEY_SALARY, New List(Of ExtractedData.BookLine)}
-        }
+        {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+        {KEY_INVEST, New List(Of ExtractedData.BookLine)},
+        {KEY_MISSION, New List(Of ExtractedData.BookLine)},
+        {KEY_SALARY, New List(Of ExtractedData.BookLine)}
+    }
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
         MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year).Invests)
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
         If CDDMap.ContainsKey(Year) Then
             MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+            MergedData.Item(KEY_SALARY).Sort(New SalaryLineComparison)
         End If
         Dump(MergedData, NewWorsheet, Year, False)
     End Sub
 
     Private Sub FeedWorkSheetWithPendings(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
-            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
-            {KEY_MISSION, New List(Of ExtractedData.BookLine)},
-            {KEY_SALARY, New List(Of ExtractedData.BookLine)}
-        }
+        {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+        {KEY_INVEST, New List(Of ExtractedData.BookLine)},
+        {KEY_MISSION, New List(Of ExtractedData.BookLine)},
+        {KEY_SALARY, New List(Of ExtractedData.BookLine)}
+    }
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year - 1).PendingOrders)
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
         MergedData.Item(KEY_INVEST).AddRange(Data.Item(Year - 1).PendingInvests)
@@ -708,16 +714,17 @@ Public Class ThisAddIn
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
         If CDDMap.ContainsKey(Year) Then
             MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+            MergedData.Item(KEY_SALARY).Sort(New SalaryLineComparison)
         End If
         Dump(MergedData, NewWorsheet, Year, False)
     End Sub
     Private Sub FeedWorkSheetWithAllPendings(NewWorsheet As Excel.Worksheet, Year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of ExtractedData.BookLine)) From {
-            {KEY_FONCT, New List(Of ExtractedData.BookLine)},
-            {KEY_INVEST, New List(Of ExtractedData.BookLine)},
-            {KEY_MISSION, New List(Of ExtractedData.BookLine)},
-            {KEY_SALARY, New List(Of ExtractedData.BookLine)}
-        }
+        {KEY_FONCT, New List(Of ExtractedData.BookLine)},
+        {KEY_INVEST, New List(Of ExtractedData.BookLine)},
+        {KEY_MISSION, New List(Of ExtractedData.BookLine)},
+        {KEY_SALARY, New List(Of ExtractedData.BookLine)}
+    }
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year - 1).PendingOrders)
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).PendingOrders)
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(Year).Orders)
@@ -729,6 +736,7 @@ Public Class ThisAddIn
         MergedData.Item(KEY_MISSION).AddRange(Data.Item(Year).Missions)
         If CDDMap.ContainsKey(Year) Then
             MergedData.Item(KEY_SALARY).AddRange(CDDMap.Item(Year))
+            MergedData.Item(KEY_SALARY).Sort(New SalaryLineComparison)
         End If
         Dump(MergedData, NewWorsheet, Year, True)
     End Sub

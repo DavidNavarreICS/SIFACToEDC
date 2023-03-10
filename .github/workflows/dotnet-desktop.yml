@@ -78,9 +78,6 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.2
     
     - name: dotnet-sonar-scanner
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # uses: chill-viking/dotnet-sonar-scanner@56713d7a4b5cc15f82a60ec869e13bf9eaa59fe5
       uses: chill-viking/dotnet-sonar-scanner@v2.0.0
       with:
