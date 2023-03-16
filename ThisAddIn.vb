@@ -17,6 +17,7 @@ Public Class ThisAddIn
     Private Const KEY_SHEET_MODE_EMPLOI As String = "Mode d'emploi"
     Private Const KEY_SHEET_RECAPITULATIF As String = "RECAPITULATIF"
     Private Const KEY_SHEET_YEARS As String = "Years"
+    Private Const KEY_SHEET_WARNINGS As String = "Warnings"
     Private Const KEY_SHEET_ELSE As String = "Divers"
     Private BaseDirectory As String
     Private SourcesDirectory As String
@@ -28,6 +29,10 @@ Public Class ThisAddIn
     Private ReadOnly ProgressDialog As New ExecutionStatus
     Private ReadOnly Data As New Dictionary(Of Integer, ExtractedData)
     Private ReadOnly AllWorksheets As New Dictionary(Of Integer, Excel.Worksheet)
+    Private ReadOnly LinesWithComment As New Dictionary(Of Integer, List(Of BookLine))
+    Private ReadOnly OutOfRangeComments As New Dictionary(Of Integer, Boolean)
+    Private ReadOnly OutOfTableComments As New Dictionary(Of Integer, Boolean)
+    Private ReadOnly OutOfSumComments As New Dictionary(Of Integer, Boolean)
     Private Const KEY_FONCT As String = "Fonctionnement"
     Private Const KEY_INVEST As String = "Investissement"
     Private Const KEY_MISSION As String = "Missions"
@@ -114,12 +119,134 @@ Public Class ThisAddIn
         ImportantCells.Clear()
         AllWorksheets.Clear()
         ExistingSheets.Clear()
+        LinesWithComment.Clear()
+        OutOfRangeComments.Clear()
+        OutOfSumComments.Clear()
+        OutOfTableComments.Clear()
         CurrentWorkbook = CreateCopy(CType(Me.Application.ActiveWorkbook, Excel.Workbook))
         SummaryWorkSheet = CType(CurrentWorkbook.Sheets(2), Excel.Worksheet)
         RecapNumber = SummaryWorkSheet.Range("A2").Value2
         GetExistingData()
         DoIntegration()
+        ProduceWarnings()
+        CurrentWorkbook.Save()
     End Sub
+
+    Private Sub ProduceWarnings()
+        If IsWorkbookWithWarnings() Then
+            NameStep("Traitement des commentaires hors format")
+            Dim warningSheet As Excel.Worksheet
+            If ExistingSheets.ContainsKey(KEY_SHEET_ELSE) Then
+                warningSheet = ExistingSheets.Item(KEY_SHEET_ELSE).Item(KEY_SHEET_WARNINGS)
+                warningSheet.UsedRange.Rows.Delete(XlDeleteShiftDirection.xlShiftToLeft)
+            Else
+                warningSheet = CType(CurrentWorkbook.Worksheets.Add(After:=SummaryWorkSheet), Excel.Worksheet)
+                warningSheet.Name = KEY_SHEET_WARNINGS
+            End If
+            Dim baseRange As Excel.Range = warningSheet.Range("A1")
+            Dim currentLine As Integer = 1
+            For Each year As Integer In Data.Keys
+                If IsSheetWithWarnings(year) Then
+                    currentLine = DumpWarnings(year, baseRange, currentLine) + 4
+                End If
+            Next
+        ElseIf ExistingSheets.Item(KEY_SHEET_ELSE).ContainsKey("Warnings") Then
+            Application.DisplayAlerts = False
+            ExistingSheets.Item(KEY_SHEET_ELSE).Item("Warnings").Delete()
+            Application.DisplayAlerts = True
+        End If
+    End Sub
+
+    Private Function DumpWarnings(year As Integer, baseRange As Range, currentLine As Integer) As Integer
+        Dim startRange As Object = baseRange.Cells(currentLine, 1)
+        startRange.Value2 = $"Liste des problèmes de commentaires pour l'année {year}"
+        Dim startAddress As String = startRange.Address
+        Dim endAddress As String = startRange.offset(0, 13).Address
+        startRange.Range(startAddress, endAddress).Merge()
+        startRange.MergeArea.Style = "WarningHeaderStyle"
+        currentLine += 1
+        Dim currentPbNum As Integer = 1
+        If LinesWithComment.ContainsKey(year) AndAlso LinesWithComment.Item(year).Count > 0 Then
+            currentLine += 1
+            baseRange.Cells(currentLine, 1).Value2 = $"{currentPbNum}. Il a des lignes avec commentaires qui ne sont plus utilisées."
+            startAddress = startRange.Address
+            endAddress = startRange.offset(0, 13).Address
+            startRange.Range(startAddress, endAddress).Merge()
+            CType(baseRange.Cells(currentLine, 1), Excel.Range).MergeArea.Style = "WarningDetailStyle"
+            currentLine += 1
+            currentPbNum += 1
+            For Each line As BookLine In LinesWithComment.Item(year)
+                baseRange.Cells(currentLine, 1).Value2 = line.A_Cptegen
+                baseRange.Cells(currentLine, 2).Value2 = line.B_Rubrique
+                baseRange.Cells(currentLine, 3).Value2 = line.C_NumeroFlux
+                baseRange.Cells(currentLine, 4).Value2 = line.D_Nom
+                baseRange.Cells(currentLine, 5).Value2 = line.E_Libelle
+                baseRange.Cells(currentLine, 6).Value2 = line.F_MntEngHTR
+                baseRange.Cells(currentLine, 7).Value2 = line.G_MontantPa
+                baseRange.Cells(currentLine, 8).Value2 = line.H_Rapprochmt
+                baseRange.Cells(currentLine, 9).Value2 = line.I_RefFactF
+                baseRange.Cells(currentLine, 10).Value2 = line.J_DatePce
+                baseRange.Cells(currentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(line)
+                baseRange.Cells(currentLine, 12).Value2 = line.L_NumPiece
+                baseRange.Cells(currentLine, 13).Value2 = line.M_Comment
+                currentLine += 1
+            Next
+            currentLine += 1
+        End If
+        If OutOfRangeComments.Item(year) Then
+            baseRange.Cells(currentLine, 1).value2 = $"{currentPbNum}. Il y a des commentaires en dehors des tables."
+            startAddress = startRange.Address
+            endAddress = startRange.offset(0, 13).Address
+            startRange.Range(startAddress, endAddress).Merge()
+            CType(baseRange.Cells(currentLine, 1), Excel.Range).MergeArea.Style = "WarningDetailStyle"
+            currentLine += 2
+            currentPbNum += 1
+        End If
+        If OutOfSumComments.Item(year) Then
+            baseRange.Cells(currentLine, 1).value2 = $"{currentPbNum}. Il y a des commentaires sur les lignes de somme."
+            startAddress = startRange.Address
+            endAddress = startRange.offset(0, 13).Address
+            startRange.Range(startAddress, endAddress).Merge()
+            CType(baseRange.Cells(currentLine, 1), Excel.Range).MergeArea.Style = "WarningDetailStyle"
+            currentLine += 2
+            currentPbNum += 1
+        End If
+        If OutOfTableComments.Item(year) Then
+            baseRange.Cells(currentLine, 1).value2 = $"{currentPbNum}. Il y a des commentaires sous les tables."
+            startAddress = startRange.Address
+            endAddress = startRange.offset(0, 13).Address
+            startRange.Range(startAddress, endAddress).Merge()
+            CType(baseRange.Cells(currentLine, 1), Excel.Range).MergeArea.Style = "WarningDetailStyle"
+            currentLine += 2
+        End If
+        Return currentLine
+    End Function
+
+    Private Function IsSheetWithWarnings(year As Integer) As Boolean
+        If LinesWithComment.ContainsKey(year) AndAlso LinesWithComment.Item(year).Count > 0 Then
+            Return True
+        End If
+        If OutOfRangeComments.Item(year) Then
+            Return True
+        End If
+        If OutOfSumComments.Item(year) Then
+            Return True
+        End If
+        If OutOfTableComments.Item(year) Then
+            Return True
+        End If
+        Return False
+    End Function
+
+    Private Function IsWorkbookWithWarnings() As Boolean
+        For Each Year As Integer In Data.Keys
+            If IsSheetWithWarnings(Year) Then
+                Return True
+            End If
+        Next
+        Return False
+    End Function
+
 
     Private Sub GetExistingData()
         ExistingSheets.Add(KEY_SHEET_MODE_EMPLOI, New Dictionary(Of String, Excel.Worksheet) From {
@@ -135,6 +262,13 @@ Public Class ThisAddIn
                     ExistingSheets.Add(KEY_SHEET_YEARS, New Dictionary(Of String, Excel.Worksheet) From {
                 {worksheet.Name, worksheet}})
                 End If
+            ElseIf worksheet.Name = KEY_SHEET_WARNINGS Then
+                If ExistingSheets.ContainsKey(KEY_SHEET_WARNINGS) Then
+                    ExistingSheets.Item(KEY_SHEET_WARNINGS).Add(worksheet.Name, worksheet)
+                Else
+                    ExistingSheets.Add(KEY_SHEET_WARNINGS, New Dictionary(Of String, Excel.Worksheet) From {
+                {KEY_SHEET_WARNINGS, worksheet}})
+                End If
             Else
                 If ExistingSheets.ContainsKey(KEY_SHEET_ELSE) Then
                     ExistingSheets.Item(KEY_SHEET_ELSE).Add(worksheet.Name, worksheet)
@@ -144,15 +278,87 @@ Public Class ThisAddIn
                 End If
             End If
         Next
-        Application.DisplayAlerts = False
-        For Each yearSheet As Excel.Worksheet In ExistingSheets.Item(KEY_SHEET_YEARS).Values
-            yearSheet.Delete()
-        Next
-        Application.DisplayAlerts = True
+        If ExistingSheets.ContainsKey(KEY_SHEET_YEARS) Then
+            Application.DisplayAlerts = False
+            For Each yearSheet As Excel.Worksheet In ExistingSheets.Item(KEY_SHEET_YEARS).Values
+                LinesWithComment.Add(CInt(yearSheet.Name), New List(Of BookLine))
+                ExtractOldDataFromExistingSheet(yearSheet)
+                yearSheet.Delete()
+            Next
+            Application.DisplayAlerts = True
+        End If
     End Sub
 
+    Private Sub ExtractOldDataFromExistingSheet(yearSheet As Worksheet)
+        Dim FullRange As Excel.Range = yearSheet.UsedRange
+        OutOfRangeComments.Add(CInt(yearSheet.Name), IsCommentOutOfRange(FullRange))
+        OutOfTableComments.Add(CInt(yearSheet.Name), False)
+        OutOfSumComments.Add(CInt(yearSheet.Name), False)
+        Dim inTable As Boolean = False
+        If IsNewHeaderVersion(FullRange) Then
+            For Each cell As Excel.Range In FullRange.Rows
+                If Not inTable And IsNewHeaderVersion(cell) Then
+                    inTable = True
+                ElseIf inTable And IsSum(cell) Then
+                    inTable = False
+                    If IsSumWithComment(cell) Then
+                        OutOfSumComments.Item(CInt(yearSheet.Name)) = True
+                    End If
+                ElseIf intable And Not (IsNewHeaderVersion(cell) Or IsEmptyLine(cell) Or IsSum(cell)) And IsLineWithComment(cell) Then
+                    Dim newLine As BookLine = ExtractedData.ReadLine(cell, 1)
+                    LinesWithComment.Item(CInt(yearSheet.Name)).Add(newLine)
+                    newLine.M_Comment = CStr(CType(cell.Cells(1, 13), Range).Value2)
+                ElseIf Not inTable And Not IsEmptyLine(cell) Then
+                    OutOfTableComments.Item(CInt(yearSheet.Name)) = True
+                End If
+            Next
+        End If
+    End Sub
+
+    Private Function IsCommentOutOfRange(fullRange As Range) As Boolean
+        Return fullRange.Columns.Count > HEADERS.Count
+    End Function
+
+    Private Function IsEmptyLine(cell As Range) As Boolean
+        For I As Integer = 1 To HEADERS.Count
+            If CStr(cell.Cells(1, I).value2) <> "" Then
+                Return False
+            End If
+        Next
+        Return True
+    End Function
+    Private Function IsNewHeaderVersion(cell As Range) As Boolean
+        Return IsHeader(cell.Cells(1, 1)) AndAlso IsComment(cell.Cells(1, 13))
+    End Function
+
     Private Function IsHeader(firstCell As Range) As Boolean
-        Return firstCell.Value2 <> "" And Not IsNumeric(firstCell.Value2)
+        Return CStr(firstCell.Value2) <> "" AndAlso Not IsNumeric(firstCell.Value2)
+    End Function
+
+    Private Function IsComment(cell As Range) As Boolean
+        Return CStr(cell.Value2) = "Commentaires"
+    End Function
+
+    Private Function IsSum(cell As Range) As Boolean
+        Return CStr(cell.Cells(1, 5).Value2) = "Somme :"
+    End Function
+
+    Private Function IsLineWithComment(cell As Range) As Boolean
+        Return CStr(cell.Cells(1, 13).Value2) <> ""
+    End Function
+
+    Private Function IsSumWithComment(cell As Range) As Boolean
+        For I As Integer = 1 To 4
+            If CStr(cell.Cells(1, I).Value2) <> "" Then
+                Return True
+            End If
+        Next
+        For I As Integer = 7 To 14
+            If CStr(cell.Cells(1, I).Value2) <> "" Then
+                Return True
+            End If
+        Next
+        Return False
     End Function
 
     Public Sub DoIntegration()
@@ -474,6 +680,20 @@ Public Class ThisAddIn
     End Sub
 
     Private Sub PrepareStyles()
+        If Not ContainsStyle("WarningDetailStyle") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("WarningDetailStyle")
+            NewStyle.Interior.Color = RGB(102, 102, 153)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
+            NewStyle.Font.Size = 11
+            NewStyle.Font.Bold = True
+        End If
+
+        If Not ContainsStyle("WarningHeaderStyle") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("WarningHeaderStyle")
+            NewStyle.Interior.Color = RGB(255, 177, 63)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
+        End If
+
         If Not ContainsStyle("HeaderStyle") Then
             Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyle")
             NewStyle.Interior.Color = RGB(102, 102, 153)
@@ -497,6 +717,12 @@ Public Class ThisAddIn
             NewStyle.Interior.Color = RGB(102, 102, 153)
             NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
             NewStyle.NumberFormatLocal = "# ##0,00"
+        End If
+
+        If Not ContainsStyle("SIFACCommentaires") Then
+            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("SIFACCommentaires")
+            NewStyle.Interior.Color = RGB(255, 232, 197)
+            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Black)
         End If
 
         If Not ContainsStyle("MtPAStyle") Then
@@ -758,10 +984,9 @@ Public Class ThisAddIn
                     StartRange.Cells(CurrentLine, 4).Value2 = Line.D_Nom
                     StartRange.Cells(CurrentLine, 5).Value2 = Line.E_Libelle
                     If Line.F_MntEngHTR = 0 Then
-                        StartRange.Cells(CurrentLine, 6).Value2 = Line.G_MontantPa
-                    Else
-                        StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
+                        Line.F_MntEngHTR = Line.G_MontantPa
                     End If
+                    StartRange.Cells(CurrentLine, 6).Value2 = Line.F_MntEngHTR
                     CType(StartRange.Cells(CurrentLine, 6), Excel.Range).Style = "MtEngStyle"
                     StartRange.Cells(CurrentLine, 7).Value2 = Line.G_MontantPa
                     CType(StartRange.Cells(CurrentLine, 7), Excel.Range).Style = "MtPAStyle"
@@ -770,7 +995,9 @@ Public Class ThisAddIn
                     StartRange.Cells(CurrentLine, 10).Value2 = Line.J_DatePce
                     StartRange.Cells(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
                     StartRange.Cells(CurrentLine, 12).Value2 = Line.L_NumPiece
+                    AddPossibleCommentToLine(Line)
                     StartRange.Cells(CurrentLine, 13).Value2 = Line.M_Comment
+                    CType(StartRange.Cells(CurrentLine, 13), Excel.Range).Style = "SIFACCommentaires"
                     StartRange.Cells(CurrentLine, 14).Value2 = Line.N_From
                     CurrentLine += 1
                     Globals.ThisAddIn.NextStep()
@@ -783,6 +1010,35 @@ Public Class ThisAddIn
                 CurrentLine += 1
             End If
         Next
+    End Sub
+
+    Private Sub AddPossibleCommentToLine(line As BookLine)
+        If line.B_Rubrique <> "SALAIRE" Then
+            If line.M_Comment <> "" Then
+                Return
+            End If
+            For Each year As Integer In LinesWithComment.Keys
+                For Each commentedLine As BookLine In LinesWithComment.Item(year)
+                    If BookLine.Equals(line, commentedLine) Then
+                        line.M_Comment = commentedLine.M_Comment
+                        LinesWithComment.Item(year).Remove(commentedLine)
+                        Return
+                    End If
+                Next
+            Next
+        Else
+            For Each year As Integer In LinesWithComment.Keys
+                For Each commentedLine As BookLine In LinesWithComment.Item(year)
+                    If commentedLine.B_Rubrique = "SALAIRE" Then
+                        If commentedLine.C_NumeroFlux = line.C_NumeroFlux Then
+                            line.M_Comment = commentedLine.M_Comment
+                            LinesWithComment.Item(year).Remove(commentedLine)
+                            Return
+                        End If
+                    End If
+                Next
+            Next
+        End If
     End Sub
 
     Private Sub DumpHeaders(startRange As Excel.Range, currentLine As Integer, FullHeader As Boolean)

@@ -44,7 +44,33 @@ Public Class ExtractedData
         Public L_NumPiece As String
         Public M_Comment As String
         Public N_From As String
-
+        Public Overrides Function Equals(obj As Object) As Boolean
+            If obj Is Nothing OrElse Me.GetType() IsNot obj.GetType() Then
+                Return False
+            End If
+            Dim bookLineObj As BookLine = CType(obj, BookLine)
+            If Not Object.Equals(Me.B_Rubrique, bookLineObj.B_Rubrique) Then
+                'Debug.WriteLine($"{Me.B_Rubrique} <> {bookLineObj.B_Rubrique}")
+                Return False
+            End If
+            If Not Object.Equals(Me.C_NumeroFlux, bookLineObj.C_NumeroFlux) Then
+                'Debug.WriteLine($"{Me.C_NumeroFlux} <> {bookLineObj.C_NumeroFlux}")
+                Return False
+            End If
+            If Not Object.Equals(Me.E_Libelle, bookLineObj.E_Libelle) Then
+                'Debug.WriteLine($"{Me.E_Libelle} <> {bookLineObj.E_Libelle}")
+                Return False
+            End If
+            If Not Object.Equals(Me.F_MntEngHTR, bookLineObj.F_MntEngHTR) Then
+                'Debug.WriteLine($"{Me.F_MntEngHTR} <> {bookLineObj.F_MntEngHTR}")
+                Return False
+            End If
+            If Not Object.Equals(Me.J_DatePce, bookLineObj.J_DatePce) Then
+                'Debug.WriteLine($"{Me.J_DatePce} <> {bookLineObj.J_DatePce}")
+                Return False
+            End If
+            Return True
+        End Function
         Public Function CompareTo(other As BookLine) As Integer Implements IComparable(Of BookLine).CompareTo
             If K_DCompt IsNot Nothing Then
                 Return K_DCompt.CompareTo(other.K_DCompt)
@@ -430,6 +456,8 @@ Public Class ExtractedData
             End If
 
             Dim NewLine As BookLine = ReadLine(FullRange, RowNum)
+            NewLine.M_Comment = ""
+            NewLine.N_From = ""
             Data.Add(NewLine)
             If NewLine.K_DCompt IsNot Nothing Then
                 SheetYear = Math.Max(SheetYear, NewLine.K_DCompt.Year)
@@ -451,9 +479,7 @@ Public Class ExtractedData
             .I_RefFactF = FullRange.Cells(RowNum, 9).Value2,
             .J_DatePce = FullRange.Cells(RowNum, 10).Value2,
             .K_DCompt = GetDateCompte(FullRange.Cells(RowNum, 11).Value2),
-            .L_NumPiece = FullRange.Cells(RowNum, 12).Value2,
-            .M_Comment = "",
-            .N_From = ""
+            .L_NumPiece = FullRange.Cells(RowNum, 12).Value2
         }
     End Function
 
