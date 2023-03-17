@@ -274,16 +274,17 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>SIFACtoEDC_Key_DN.pfx</ManifestKeyFile>
+    <ManifestKeyFile>
+    </ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>3AC92A5313FFA7868ACD8A5BBB01E2C80B1B7876</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>5E0F790E4C6761C328C55710B758755C41C0AA19</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>SIFACtoEDC_Key_DN.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>SIFACToEDC_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <!-- Include the build rules for a Visual Basic project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

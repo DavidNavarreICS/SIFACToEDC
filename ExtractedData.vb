@@ -203,7 +203,6 @@ Public Class ExtractedData
 
         Return newWorkbook
     End Function
-
     Private Function CreateWorksheet(baseWorksheet As Excel.Worksheet, SheetName As String) As Excel.Worksheet
         Dim NewWorksheet = CType(AddinApplication.Worksheets.Add(After:=baseWorksheet), Excel.Worksheet)
         NewWorksheet.Name = SheetName
@@ -223,7 +222,6 @@ Public Class ExtractedData
         DumpData(NewWorksheet, ReducedTable)
         DumpData(TrashWorksheet, TrashTable)
     End Sub
-
     Private Sub ReduceTable()
         For Each Key As String In FullTable.Keys
             Dim PreparedLines As New Dictionary(Of String, List(Of BookLine)) From {
@@ -397,7 +395,6 @@ Public Class ExtractedData
             PreparedLines.Item(Key).Add(Line)
         End If
     End Sub
-
     Private Sub CopyHeaders(baseWorksheet As Excel.Worksheet, newWorksheet As Excel.Worksheet)
         Dim SourceRange As Excel.Range = baseWorksheet.UsedRange.Rows(1)
         Dim DestRange As Excel.Range = newWorksheet.Range("A1")
@@ -434,7 +431,6 @@ Public Class ExtractedData
             Next
         Next
     End Sub
-
     Public Shared Function GetDateCompteAsText(Line As BookLine) As String
         If Line.K_DCompt IsNot Nothing Then
             Return Line.K_DCompt.AsText
@@ -442,7 +438,6 @@ Public Class ExtractedData
             Return ""
         End If
     End Function
-
     Private Sub FeedTable(BaseWorksheet As Excel.Worksheet)
         Dim FullRange As Excel.Range = BaseWorksheet.UsedRange.End(Microsoft.Office.Interop.Excel.XlDirection.xlDown)
         For RowNum As Integer = 1 To NumberOfLines
@@ -465,7 +460,6 @@ Public Class ExtractedData
             Globals.ThisAddIn.NextStep()
         Next
     End Sub
-
     Public Shared Function ReadLine(FullRange As Range, RowNum As Integer) As BookLine
         Return New BookLine With {
             .A_Cptegen = FullRange.Cells(RowNum, 1).Value2,
@@ -482,7 +476,6 @@ Public Class ExtractedData
             .L_NumPiece = FullRange.Cells(RowNum, 12).Value2
         }
     End Function
-
     Private Shared Function GetDateCompte(TextValue As String) As DateCompte
         If Not TextValue = "" Then
             Return New DateCompte(TextValue)
@@ -490,7 +483,6 @@ Public Class ExtractedData
             Return Nothing
         End If
     End Function
-
     Private Shared Function GetNumber(FullRange As Range, RowNum As Integer, ColNum As Integer) As Double
         Dim TextToConvert As String = FullRange.Cells(RowNum, ColNum).Value2
         Dim IndexVirgule As Integer = TextToConvert.IndexOf(",")
