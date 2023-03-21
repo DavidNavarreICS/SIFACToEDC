@@ -1,4 +1,4 @@
-﻿Partial Class RibbonEDC
+﻿Partial Class RibbonEdc
     Inherits Microsoft.Office.Tools.Ribbon.RibbonBase
 
     <System.Diagnostics.DebuggerNonUserCode()> _
@@ -12,7 +12,8 @@
 
     End Sub
 
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")>
+    <System.Diagnostics.DebuggerNonUserCode()>
     Public Sub New()
         MyBase.New(Globals.Factory.GetRibbonFactory())
 
@@ -41,7 +42,7 @@
     'Ne la modifiez pas à l'aide de l'éditeur de code.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(RibbonEDC))
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(RibbonEdc))
         Me.Tab1 = Me.Factory.CreateRibbonTab
         Me.Group1 = Me.Factory.CreateRibbonGroup
         Me.Button1 = Me.Factory.CreateRibbonButton
@@ -90,9 +91,9 @@ End Class
 Partial Class ThisRibbonCollection
 
     <System.Diagnostics.DebuggerNonUserCode()> _
-    Friend ReadOnly Property Ribbon1() As RibbonEDC
+    Friend ReadOnly Property Ribbon1() As RibbonEdc
         Get
-            Return Me.GetRibbon(Of RibbonEDC)()
+            Return Me.GetRibbon(Of RibbonEdc)()
         End Get
     End Property
 End Class

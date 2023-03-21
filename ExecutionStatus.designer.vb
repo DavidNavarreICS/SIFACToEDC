@@ -1,9 +1,12 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿Imports System.Reflection
+Imports System.Resources
+
+<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ExecutionStatus
     Inherits System.Windows.Forms.Form
 
     'Form remplace la méthode Dispose pour nettoyer la liste des composants.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -16,7 +19,6 @@ Partial Class ExecutionStatus
 
     'Requise par le Concepteur Windows Form
     Private components As System.ComponentModel.IContainer
-
     'REMARQUE : la procédure suivante est requise par le Concepteur Windows Form
     'Elle peut être modifiée à l'aide du Concepteur Windows Form.  
     'Ne la modifiez pas à l'aide de l'éditeur de code.
@@ -36,7 +38,7 @@ Partial Class ExecutionStatus
         Me.LblPhase.Name = "LblPhase"
         Me.LblPhase.Size = New System.Drawing.Size(125, 40)
         Me.LblPhase.TabIndex = 11
-        Me.LblPhase.Text = "Label2"
+        Me.LblPhase.Text = My.Resources.ResourceManager.GetString("ProgressTitle")
         Me.LblPhase.UseWaitCursor = True
         '
         'ProgressTraitement
@@ -58,7 +60,7 @@ Partial Class ExecutionStatus
         Me.Margin = New System.Windows.Forms.Padding(4, 5, 4, 5)
         Me.Name = "ExecutionStatus"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Travail en cours"
+        Me.Text = My.Resources.ResourceManager.GetString("ProgressTitle")
         Me.TopMost = True
         Me.UseWaitCursor = True
         Me.ResumeLayout(False)

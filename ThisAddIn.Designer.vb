@@ -8,7 +8,7 @@
 ' </auto-generated>
 '------------------------------------------------------------------------------
 
-Option Strict Off
+Option Strict On
 Option Explicit On
 
 

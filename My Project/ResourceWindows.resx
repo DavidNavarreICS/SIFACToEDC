@@ -117,67 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AvailableBudget" xml:space="preserve">
-    <value>Montant disponible {0}</value>
-  </data>
-  <data name="CellRef" xml:space="preserve">
-    <value>='{0}'!{1}</value>
-  </data>
-  <data name="CellRef2" xml:space="preserve">
-    <value>={0}</value>
-  </data>
-  <data name="DepenseUntil" xml:space="preserve">
-    <value>Dépenses jusqu'en {0}</value>
-  </data>
-  <data name="DirectCellSum" xml:space="preserve">
-    <value>='{0}'!{1}+'{0}'!{2}</value>
-  </data>
-  <data name="DirectCellSum2" xml:space="preserve">
-    <value>={0}+SUM({1}:{2})</value>
-  </data>
-  <data name="DirectCellSum3" xml:space="preserve">
-    <value>={0}+{1}</value>
-  </data>
-  <data name="DirectDiff" xml:space="preserve">
-    <value>={0}-{1}</value>
-  </data>
-  <data name="DirectDiff2" xml:space="preserve">
-    <value>={0}-{1}-SUM({2}:{3})</value>
-  </data>
-  <data name="EngagedBudget" xml:space="preserve">
-    <value>Montant engagé + liquidé {0}</value>
-  </data>
-  <data name="HeaderOverYear" xml:space="preserve">
-    <value>&gt; {0}</value>
-  </data>
-  <data name="InitialBudget" xml:space="preserve">
-    <value>Budget initial {0}</value>
-  </data>
-  <data name="LineFrom" xml:space="preserve">
-    <value>Ligne venant de {0}</value>
-  </data>
-  <data name="ModifiedBudget" xml:space="preserve">
-    <value>Budget modifié {0}</value>
-  </data>
-  <data name="Problem1" xml:space="preserve">
-    <value>{0}. Il a des lignes avec commentaires qui ne sont plus utilisées.</value>
-  </data>
-  <data name="Problem2" xml:space="preserve">
-    <value>{0}. Il y a des commentaires en dehors des tables.</value>
-  </data>
-  <data name="Problem3" xml:space="preserve">
-    <value>{0}. Il y a des commentaires sur les lignes de somme.</value>
-  </data>
-  <data name="Problem4" xml:space="preserve">
-    <value>{0}. Il y a des commentaires sous les tables.</value>
-  </data>
   <data name="ProgressTitle" xml:space="preserve">
     <value>Travail en cours</value>
-  </data>
-  <data name="SumRange" xml:space="preserve">
-    <value>=SUM({0}:{1})</value>
-  </data>
-  <data name="YearProblem" xml:space="preserve">
-    <value>Liste des problèmes de commentaires pour l'année {0}</value>
   </data>
 </root>

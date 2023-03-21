@@ -1,0 +1,16 @@
+{
+  "ServerUri": "https://setekh.irit.fr/sonarqube/",
+  "Organization": null,
+  "ProjectKey": "sifac_to_edc",
+  "ProjectName": "SIFAC to EDC",
+  "Profiles": {
+    "VB": {
+      "ProfileKey": "AYaiOE6f27z5kW5Sr8Sz",
+      "ProfileTimestamp": "2023-03-02T12:07:24Z"
+    },
+    "Secrets": {
+      "ProfileKey": "AYaiOEuV27z5kW5Sr7Y_",
+      "ProfileTimestamp": "2023-03-02T12:07:23Z"
+    }
+  }
+}
