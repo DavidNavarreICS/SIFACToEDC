@@ -70,6 +70,15 @@ Namespace My.Resources
         End Property
         
         '''<summary>
+        '''  Recherche une chaîne localisée semblable à {0}{1}.
+        '''</summary>
+        Public ReadOnly Property CellAddress() As String
+            Get
+                Return ResourceManager.GetString("CellAddress", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Recherche une chaîne localisée semblable à =&apos;{0}&apos;!{1}.
         '''</summary>
         Public ReadOnly Property CellRef() As String
@@ -169,6 +178,15 @@ Namespace My.Resources
         End Property
         
         '''<summary>
+        '''  Recherche une chaîne localisée semblable à liasse du {0} au {1}.
+        '''</summary>
+        Public ReadOnly Property LiasseDate() As String
+            Get
+                Return ResourceManager.GetString("LiasseDate", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Recherche une chaîne localisée semblable à Ligne venant de {0}.
         '''</summary>
         Public ReadOnly Property LineFrom() As String
@@ -232,11 +250,65 @@ Namespace My.Resources
         End Property
         
         '''<summary>
+        '''  Recherche une chaîne localisée semblable à Problèmes sur l&apos;onglet RECAPITULATIF.
+        '''</summary>
+        Public ReadOnly Property RecapProblem() As String
+            Get
+                Return ResourceManager.GetString("RecapProblem", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Recherche une chaîne localisée semblable à =SUM({0}:{1}).
         '''</summary>
         Public ReadOnly Property SumRange() As String
             Get
                 Return ResourceManager.GetString("SumRange", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Recherche une chaîne localisée semblable à Impossible de trouver le montant total.
+        '''</summary>
+        Public ReadOnly Property TotalAmountProblem() As String
+            Get
+                Return ResourceManager.GetString("TotalAmountProblem", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Recherche une chaîne localisée semblable à Impossible de trouver le budget..
+        '''</summary>
+        Public ReadOnly Property TotalBudgetProblem() As String
+            Get
+                Return ResourceManager.GetString("TotalBudgetProblem", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Recherche une chaîne localisée semblable à Impossible de trouver le cumul..
+        '''</summary>
+        Public ReadOnly Property TotalCumulProblem() As String
+            Get
+                Return ResourceManager.GetString("TotalCumulProblem", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Recherche une chaîne localisée semblable à Impossible de trouver l&apos;engagé..
+        '''</summary>
+        Public ReadOnly Property TotalEngagedProblem() As String
+            Get
+                Return ResourceManager.GetString("TotalEngagedProblem", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Recherche une chaîne localisée semblable à Impossible de trouver le montant total net..
+        '''</summary>
+        Public ReadOnly Property TotalNetAmountProblem() As String
+            Get
+                Return ResourceManager.GetString("TotalNetAmountProblem", resourceCulture)
             End Get
         End Property
         

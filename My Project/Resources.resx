@@ -120,6 +120,9 @@
   <data name="AvailableBudget" xml:space="preserve">
     <value>Montant disponible {0}</value>
   </data>
+  <data name="CellAddress" xml:space="preserve">
+    <value>{0}{1}</value>
+  </data>
   <data name="CellRef" xml:space="preserve">
     <value>='{0}'!{1}</value>
   </data>
@@ -153,6 +156,9 @@
   <data name="InitialBudget" xml:space="preserve">
     <value>Budget initial {0}</value>
   </data>
+  <data name="LiasseDate" xml:space="preserve">
+    <value>liasse du {0} au {1}</value>
+  </data>
   <data name="LineFrom" xml:space="preserve">
     <value>Ligne venant de {0}</value>
   </data>
@@ -174,8 +180,26 @@
   <data name="ProgressTitle" xml:space="preserve">
     <value>Travail en cours</value>
   </data>
+  <data name="RecapProblem" xml:space="preserve">
+    <value>Problèmes sur l'onglet RECAPITULATIF</value>
+  </data>
   <data name="SumRange" xml:space="preserve">
     <value>=SUM({0}:{1})</value>
+  </data>
+  <data name="TotalAmountProblem" xml:space="preserve">
+    <value>Impossible de trouver le montant total</value>
+  </data>
+  <data name="TotalBudgetProblem" xml:space="preserve">
+    <value>Impossible de trouver le budget.</value>
+  </data>
+  <data name="TotalCumulProblem" xml:space="preserve">
+    <value>Impossible de trouver le cumul.</value>
+  </data>
+  <data name="TotalEngagedProblem" xml:space="preserve">
+    <value>Impossible de trouver l'engagé.</value>
+  </data>
+  <data name="TotalNetAmountProblem" xml:space="preserve">
+    <value>Impossible de trouver le montant total net.</value>
   </data>
   <data name="YearProblem" xml:space="preserve">
     <value>Liste des problèmes de commentaires pour l'année {0}</value>
