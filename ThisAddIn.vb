@@ -77,23 +77,6 @@ Public Class ThisAddIn
             Return yList
         End Get
     End Property
-    Private Class SalaryLineComparison : Implements IComparer(Of BookLine)
-        Public Function Compare(x As BookLine, y As BookLine) As Integer Implements IComparer(Of BookLine).Compare
-            If x IsNot Nothing Then
-                If y IsNot Nothing Then
-                    Return String.CompareOrdinal(x.DNom, y.DNom)
-                Else
-                    Return String.CompareOrdinal(x.DNom, Nothing)
-                End If
-            Else
-                If y IsNot Nothing Then
-                    Return String.CompareOrdinal(Nothing, y.DNom)
-                Else
-                    Return 0
-                End If
-            End If
-        End Function
-    End Class
     Public Sub ExtractAndMerge()
         Data.Clear()
         CDDMap.Clear()
@@ -113,7 +96,6 @@ Public Class ThisAddIn
         ProduceWarnings()
         CurrentWorkbook.Save()
     End Sub
-
     Private Sub ProduceWarnings()
         If IsWorkbookWithWarnings() Then
             NameStep("Traitement des commentaires hors format")
@@ -141,49 +123,46 @@ Public Class ThisAddIn
             Application.DisplayAlerts = True
         End If
     End Sub
-
     Private Function DumpSummaryWarnings(baseRange As Range, currentLine As Integer) As Integer
-        CreateWarning(GetMessage("RecapProblem"), baseRange, currentLine, "WarningHeaderStyle")
+        Utils.CreateWarning(Utils.GetMessage("RecapProblem"), baseRange, currentLine, "WarningHeaderStyle")
         currentLine += 1
         If SummaryCellsNotFound.Item(SummaryCellKind.TOTAL) Then
             currentLine += 1
-            CreateWarning(GetMessage("TotalAmountProblem"), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(Utils.GetMessage("TotalAmountProblem"), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
         End If
         If SummaryCellsNotFound.Item(SummaryCellKind.TOTAL_NET) Then
             currentLine += 1
-            CreateWarning(GetMessage("TotalNetAmountProblem"), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(Utils.GetMessage("TotalNetAmountProblem"), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
         End If
         If SummaryCellsNotFound.Item(SummaryCellKind.CUMUL) Then
             currentLine += 1
-            CreateWarning(GetMessage("TotalCumulProblem"), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(Utils.GetMessage("TotalCumulProblem"), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
         End If
         If SummaryCellsNotFound.Item(SummaryCellKind.BUDGET) Then
             currentLine += 1
-            CreateWarning(GetMessage("TotalBudgetProblem"), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(Utils.GetMessage("TotalBudgetProblem"), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
         End If
         If SummaryCellsNotFound.Item(SummaryCellKind.ENGAGED) Then
             currentLine += 1
-            CreateWarning(GetMessage("TotalEngagedProblem"), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(Utils.GetMessage("TotalEngagedProblem"), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
         End If
         Return currentLine
     End Function
 
-    Private Shared Function GetMessage(ResourceName As String) As String
-        Return My.Resources.ResourceManager.GetString(ResourceName, CultureInfo.CurrentCulture)
-    End Function
+
 
     Private Function DumpWarnings(year As Integer, baseRange As Range, currentLine As Integer) As Integer
-        CreateWarning(String.Format(CultureInfo.CurrentCulture, GetMessage("YearProblem"), year), baseRange, currentLine, "WarningHeaderStyle")
+        Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("YearProblem"), year), baseRange, currentLine, "WarningHeaderStyle")
         currentLine += 1
         Dim currentPbNum As Integer = 1
         If LinesWithComment.ContainsKey(year) AndAlso LinesWithComment.Item(year).Count > 0 Then
             currentLine += 1
-            CreateWarning(String.Format(CultureInfo.CurrentCulture, GetMessage("Problem1"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("Problem1"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
             currentPbNum += 1
             For Each line As BookLine In LinesWithComment.Item(year)
@@ -197,7 +176,7 @@ Public Class ThisAddIn
                 baseRange.Cells(currentLine, 8).Value2 = line.HRapprochmt
                 baseRange.Cells(currentLine, 9).Value2 = line.IRefFactF
                 baseRange.Cells(currentLine, 10).Value2 = line.JDatePce
-                baseRange.Cells(currentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(line)
+                baseRange.Cells(currentLine, 11).Value2 = Utils.GetDateCompteAsText(line)
                 baseRange.Cells(currentLine, 12).Value2 = line.LNumPiece
                 baseRange.Cells(currentLine, 13).Value2 = line.MComment
                 currentLine += 1
@@ -205,32 +184,21 @@ Public Class ThisAddIn
             currentLine += 1
         End If
         If OutOfRangeComments.Item(year) Then
-            CreateWarning(String.Format(CultureInfo.CurrentCulture, GetMessage("Problem2"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("Problem2"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 2
             currentPbNum += 1
         End If
         If OutOfSumComments.Item(year) Then
-            CreateWarning(String.Format(CultureInfo.CurrentCulture, GetMessage("Problem3"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("Problem3"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 2
             currentPbNum += 1
         End If
         If OutOfTableComments.Item(year) Then
-            CreateWarning(String.Format(CultureInfo.CurrentCulture, GetMessage("Problem4"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
+            Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("Problem4"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 2
         End If
         Return currentLine
     End Function
-
-    Private Shared Sub CreateWarning(message As String, baseRange As Range, currentLine As Integer, style As String)
-        Dim startRange As Excel.Range = baseRange.Cells(currentLine, 1)
-        Dim startAddress As String = startRange.Address
-        Dim endAddress As String = startRange.Offset(0, 13).Address
-        Dim mergedRange As Range = baseRange.Range(startAddress, endAddress)
-        mergedRange.Merge()
-        mergedRange.Value2 = message
-        mergedRange.Style = style
-    End Sub
-
     Private Function IsSheetWithWarnings(year As Integer) As Boolean
         If LinesWithComment.ContainsKey(year) AndAlso LinesWithComment.Item(year).Count > 0 Then
             Return True
@@ -310,21 +278,21 @@ Public Class ThisAddIn
 
     Private Sub ExtractOldDataFromExistingSheet(yearSheet As Worksheet)
         Dim FullRange As Excel.Range = yearSheet.UsedRange
-        If IsNewHeaderVersion(FullRange) Then
+        If Utils.IsNewHeaderVersion(FullRange) Then
             OutOfRangeComments.Add(CInt(yearSheet.Name), IsCommentOutOfRange(FullRange))
             OutOfTableComments.Add(CInt(yearSheet.Name), False)
             OutOfSumComments.Add(CInt(yearSheet.Name), False)
             Dim inTable As Boolean = False
             For Each cell As Excel.Range In FullRange.Rows
-                If Not inTable AndAlso IsNewHeaderVersion(cell) Then
+                If Not inTable AndAlso Utils.IsNewHeaderVersion(cell) Then
                     inTable = True
-                ElseIf inTable AndAlso IsSum(cell) Then
+                ElseIf inTable AndAlso Utils.IsSum(cell) Then
                     inTable = False
-                    If IsSumWithComment(cell) Then
+                    If Utils.IsSumWithComment(cell) Then
                         OutOfSumComments.Item(CInt(yearSheet.Name)) = True
                     End If
-                ElseIf inTable AndAlso Not (IsNewHeaderVersion(cell) OrElse IsEmptyLine(cell) OrElse IsSum(cell)) AndAlso IsLineWithComment(cell) Then
-                    Dim newLine As BookLine = ExtractedData.ReadLine(cell, 1)
+                ElseIf inTable AndAlso Not (Utils.IsNewHeaderVersion(cell) OrElse IsEmptyLine(cell) OrElse Utils.IsSum(cell)) AndAlso Utils.IsLineWithComment(cell) Then
+                    Dim newLine As BookLine = Utils.ReadLine(cell, 1)
                     LinesWithComment.Item(CInt(yearSheet.Name)).Add(newLine)
                     newLine.MComment = CStr(CType(cell.Cells(1, 13), Range).Value2)
                 ElseIf Not inTable AndAlso Not IsEmptyLine(cell) Then
@@ -346,40 +314,6 @@ Public Class ThisAddIn
         Next
         Return True
     End Function
-    Private Shared Function IsNewHeaderVersion(cell As Range) As Boolean
-        Return IsHeader(cell.Cells(1, 1)) AndAlso IsComment(cell.Cells(1, 13))
-    End Function
-
-    Private Shared Function IsHeader(firstCell As Range) As Boolean
-        Return CStr(firstCell.Value2) <> "" AndAlso Not IsNumeric(firstCell.Value2)
-    End Function
-
-    Private Shared Function IsComment(cell As Range) As Boolean
-        Return CStr(cell.Value2) = "Commentaires"
-    End Function
-
-    Private Shared Function IsSum(cell As Range) As Boolean
-        Return CStr(cell.Cells(1, 5).Value2) = "Somme :"
-    End Function
-
-    Private Shared Function IsLineWithComment(cell As Range) As Boolean
-        Return CStr(cell.Cells(1, 13).Value2) <> ""
-    End Function
-
-    Private Shared Function IsSumWithComment(cell As Range) As Boolean
-        For I As Integer = 1 To 4
-            If CStr(cell.Cells(1, I).Value2) <> "" Then
-                Return True
-            End If
-        Next
-        For I As Integer = 7 To 14
-            If CStr(cell.Cells(1, I).Value2) <> "" Then
-                Return True
-            End If
-        Next
-        Return False
-    End Function
-
     Public Sub DoIntegration()
         Dim dialog As Microsoft.Office.Core.FileDialog
         dialog = Application.FileDialog(Microsoft.Office.Core.MsoFileDialogType.msoFileDialogFilePicker)
@@ -417,9 +351,9 @@ Public Class ThisAddIn
         Dim ClosedYearsStart As Range = SummaryWorkSheet.Range("$C$18")
         If yList.Count > 2 Then
             SummaryWorkSheet.Range(ClosedYearsStart.Address, ClosedYearsStart.Offset(0, yList.Count - 2).Address).Merge()
-            SetAreaValue2(ClosedYearsStart, GetFormattedString("DepenseUntil", yList.Max - 1), "RecapHeaderStyle")
+            Utils.SetAreaValue2(ClosedYearsStart, Utils.GetFormattedString("DepenseUntil", yList.Max - 1), "RecapHeaderStyle")
         ElseIf yList.Count = 2 Then
-            SetAreaValue2(ClosedYearsStart, "", "RecapHeaderStyle")
+            Utils.SetAreaValue2(ClosedYearsStart, "", "RecapHeaderStyle")
         End If
 
         For Each Year As Integer In yList
@@ -452,139 +386,139 @@ Public Class ThisAddIn
         If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL) Then
             Dim specificFormula As String
             If fullRecap Then
-                specificFormula = GetFormattedString("DirectDiff2", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+                specificFormula = Utils.GetFormattedString("DirectDiff2", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
             Else
-                specificFormula = GetFormattedString("DirectDiff", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
+                specificFormula = Utils.GetFormattedString("DirectDiff", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
             End If
-            SetCellFormula(BaseRange.Offset(7, CurrentCol), specificFormula, "RecapNumberStyle5")
+            Utils.SetCellFormula(BaseRange.Offset(7, CurrentCol), specificFormula, "RecapNumberStyle5")
         Else
-            SetCellValue2(BaseRange.Offset(7, CurrentCol), "", "RecapNumberStyle5")
+            Utils.SetCellValue2(BaseRange.Offset(7, CurrentCol), "", "RecapNumberStyle5")
         End If
         If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL_NET) Then
             Dim specificFormula As String
             If fullRecap Then
-                specificFormula = GetFormattedString("DirectDiff2", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+                specificFormula = Utils.GetFormattedString("DirectDiff2", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
             Else
-                specificFormula = GetFormattedString("DirectDiff", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
+                specificFormula = Utils.GetFormattedString("DirectDiff", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
             End If
-            SetCellFormula(BaseRange.Offset(7, CurrentCol + 1), specificFormula, "RecapNumberStyle2")
+            Utils.SetCellFormula(BaseRange.Offset(7, CurrentCol + 1), specificFormula, "RecapNumberStyle2")
         Else
-            SetCellValue2(BaseRange.Offset(7, CurrentCol + 1), "", "RecapNumberStyle2")
+            Utils.SetCellValue2(BaseRange.Offset(7, CurrentCol + 1), "", "RecapNumberStyle2")
         End If
         If Not SummaryCellsNotFound.Item(SummaryCellKind.CUMUL) Then
             Dim specificFormula As String
             If fullRecap Then
-                specificFormula = GetFormattedString("DirectCellSum2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+                specificFormula = Utils.GetFormattedString("DirectCellSum2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
             Else
-                specificFormula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
+                specificFormula = Utils.GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
             End If
-            SetCellRawFormula(SummaryWorkSheet.Range(CumulAddress), specificFormula)
+            Utils.SetCellRawFormula(SummaryWorkSheet.Range(CumulAddress), specificFormula)
         End If
     End Sub
 
     Private Sub DumpSummaryFinalRecapCommonParts(BaseRange As Range, BudgetAddress As String, EngagedAddress As String, yList As List(Of Integer), CurrentYearAmountCol As Integer, CurrentCol As Integer)
         SummaryWorkSheet.Range(BaseRange.Offset(0, CurrentCol).Address, BaseRange.Offset(0, CurrentCol + 1).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(0, CurrentCol), GetFormattedString("HeaderOverYear", yList.Max), "RecapHeaderStyle")
+        Utils.SetAreaValue2(BaseRange.Offset(0, CurrentCol), Utils.GetFormattedString("HeaderOverYear", yList.Max), "RecapHeaderStyle")
         SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol).Address, BaseRange.Offset(3, CurrentCol).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(1, CurrentCol), "Reste Total à dépenser (y compris frais de Gestion UPS)", "RecapHeaderStyle6")
-        SetAreaValue2(BaseRange.Offset(4, CurrentCol), "", "RecapHeaderStyle6")
-        SetAreaValue2(BaseRange.Offset(5, CurrentCol), "", "RecapHeaderStyle6")
-        SetAreaValue2(BaseRange.Offset(6, CurrentCol), "", "RecapHeaderStyle6")
+        Utils.SetAreaValue2(BaseRange.Offset(1, CurrentCol), "Reste Total à dépenser (y compris frais de Gestion UPS)", "RecapHeaderStyle6")
+        Utils.SetAreaValue2(BaseRange.Offset(4, CurrentCol), "", "RecapHeaderStyle6")
+        Utils.SetAreaValue2(BaseRange.Offset(5, CurrentCol), "", "RecapHeaderStyle6")
+        Utils.SetAreaValue2(BaseRange.Offset(6, CurrentCol), "", "RecapHeaderStyle6")
 
-        SetAreaValue2(BaseRange.Offset(0, CurrentCol + 1), "", "RecapHeaderStyle")
+        Utils.SetAreaValue2(BaseRange.Offset(0, CurrentCol + 1), "", "RecapHeaderStyle")
         SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(1, CurrentCol + 1), "Reste Net à dépenser (net des Frais de Gestion UPS)", "RecapHeaderStyle")
+        Utils.SetAreaValue2(BaseRange.Offset(1, CurrentCol + 1), "Reste Net à dépenser (net des Frais de Gestion UPS)", "RecapHeaderStyle")
         BaseRange.Offset(1, CurrentCol + 1).MergeArea.Rows.RowHeight = BaseRange.Offset(0, CurrentCol + 1).RowHeight * 1.1
-        SetAreaValue2(BaseRange.Offset(4, CurrentCol + 1), "", "RecapNumberStyle2")
-        SetAreaValue2(BaseRange.Offset(5, CurrentCol + 1), "", "RecapNumberStyle2")
-        SetAreaValue2(BaseRange.Offset(6, CurrentCol + 1), "", "RecapNumberStyle2")
+        Utils.SetAreaValue2(BaseRange.Offset(4, CurrentCol + 1), "", "RecapNumberStyle2")
+        Utils.SetAreaValue2(BaseRange.Offset(5, CurrentCol + 1), "", "RecapNumberStyle2")
+        Utils.SetAreaValue2(BaseRange.Offset(6, CurrentCol + 1), "", "RecapNumberStyle2")
 
         SummaryWorkSheet.Range(BaseRange.Offset(9, CurrentCol + 1).Address, BaseRange.Offset(9, CurrentCol + 2).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(9, CurrentCol + 1), "Montant total disponible :", "RecapHeaderStyle5")
-        SetCellFormula(BaseRange.Offset(9, CurrentCol + 3), GetFormattedString("DirectCellSum3", BaseRange.Offset(7, CurrentYearAmountCol + 2).Address(False, False), BaseRange.Offset(7, CurrentCol + 1).Address(False, False)), "RecapNumberStyle2")
+        Utils.SetAreaValue2(BaseRange.Offset(9, CurrentCol + 1), "Montant total disponible :", "RecapHeaderStyle5")
+        Utils.SetCellFormula(BaseRange.Offset(9, CurrentCol + 3), Utils.GetFormattedString("DirectCellSum3", BaseRange.Offset(7, CurrentYearAmountCol + 2).Address(False, False), BaseRange.Offset(7, CurrentCol + 1).Address(False, False)), "RecapNumberStyle2")
         If Not SummaryCellsNotFound.Item(SummaryCellKind.BUDGET) Then
-            SetCellRawFormula(SummaryWorkSheet.Range(BudgetAddress), GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False)))
+            Utils.SetCellRawFormula(SummaryWorkSheet.Range(BudgetAddress), Utils.GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False)))
         End If
         If Not SummaryCellsNotFound.Item(SummaryCellKind.ENGAGED) Then
-            SetCellRawFormula(SummaryWorkSheet.Range(EngagedAddress), GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False)))
+            Utils.SetCellRawFormula(SummaryWorkSheet.Range(EngagedAddress), Utils.GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False)))
         End If
     End Sub
 
     Private Sub DumpSummaryHeaders(BaseRange As Range)
-        SetCellValue2(BaseRange.Offset(0, 0), "", "RecapHeaderStyle3")
+        Utils.SetCellValue2(BaseRange.Offset(0, 0), "", "RecapHeaderStyle3")
         SummaryWorkSheet.Range(BaseRange.Offset(1, 0).Address, BaseRange.Offset(3, 0).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(1, 0), "Masse", "RecapHeaderStyle3")
-        SetCellValue2(BaseRange.Offset(4, 0), "1 Personnel", "RecapHeaderStyle4")
-        SetCellValue2(BaseRange.Offset(5, 0), "2 Fonctionnement hors amort.", "RecapHeaderStyle4")
-        SetCellValue2(BaseRange.Offset(6, 0), "3 Investissement", "RecapHeaderStyle4")
-        SetCellValue2(BaseRange.Offset(7, 0), "Total", "RecapHeaderStyle5")
+        Utils.SetAreaValue2(BaseRange.Offset(1, 0), "Masse", "RecapHeaderStyle3")
+        Utils.SetCellValue2(BaseRange.Offset(4, 0), "1 Personnel", "RecapHeaderStyle4")
+        Utils.SetCellValue2(BaseRange.Offset(5, 0), "2 Fonctionnement hors amort.", "RecapHeaderStyle4")
+        Utils.SetCellValue2(BaseRange.Offset(6, 0), "3 Investissement", "RecapHeaderStyle4")
+        Utils.SetCellValue2(BaseRange.Offset(7, 0), "Total", "RecapHeaderStyle5")
     End Sub
 
     Private Sub DumpSummaryForPreviousYear(ByRef BaseRange As Range, yList As List(Of Integer), Year As Integer)
         Dim CurrentCol As Integer = yList.IndexOf(Year) + 1
         SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol).Address, BaseRange.Offset(3, CurrentCol).Address).Merge()
-        SetAreaValue2(BaseRange.Offset(1, CurrentCol), CStr(Year), "RecapHeaderStyle")
+        Utils.SetAreaValue2(BaseRange.Offset(1, CurrentCol), CStr(Year), "RecapHeaderStyle")
         If ImportantCells.Item(Year).ContainsKey(KEY_SALARY) Then
-            SetCellFormula(BaseRange.Offset(4, CurrentCol), GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_SALARY)), "RecapNumberStyle")
+            Utils.SetCellFormula(BaseRange.Offset(4, CurrentCol), Utils.GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_SALARY)), "RecapNumberStyle")
         Else
-            SetCellValue(BaseRange.Offset(4, CurrentCol), 0, "RecapNumberStyle")
+            Utils.SetCellValue(BaseRange.Offset(4, CurrentCol), 0, "RecapNumberStyle")
         End If
         If ImportantCells.Item(Year).ContainsKey(KEY_FONCT) AndAlso ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
-            SetCellFormula(BaseRange.Offset(5, CurrentCol), GetFormattedString("DirectCellSum", Year, ImportantCells.Item(Year).Item(KEY_FONCT), ImportantCells.Item(Year).Item(KEY_MISSION)), "RecapNumberStyle")
+            Utils.SetCellFormula(BaseRange.Offset(5, CurrentCol), Utils.GetFormattedString("DirectCellSum", Year, ImportantCells.Item(Year).Item(KEY_FONCT), ImportantCells.Item(Year).Item(KEY_MISSION)), "RecapNumberStyle")
         ElseIf ImportantCells.Item(Year).ContainsKey(KEY_FONCT) Then
-            SetCellFormula(BaseRange.Offset(5, CurrentCol), GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_FONCT)), "RecapNumberStyle")
+            Utils.SetCellFormula(BaseRange.Offset(5, CurrentCol), Utils.GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_FONCT)), "RecapNumberStyle")
         ElseIf ImportantCells.Item(Year).ContainsKey(KEY_MISSION) Then
-            SetCellFormula(BaseRange.Offset(5, CurrentCol), GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_MISSION)), "RecapNumberStyle")
+            Utils.SetCellFormula(BaseRange.Offset(5, CurrentCol), Utils.GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_MISSION)), "RecapNumberStyle")
         Else
-            SetCellValue(BaseRange.Offset(5, CurrentCol), 0, "RecapNumberStyle")
+            Utils.SetCellValue(BaseRange.Offset(5, CurrentCol), 0, "RecapNumberStyle")
         End If
         If ImportantCells.Item(Year).ContainsKey(KEY_INVEST) Then
-            SetCellFormula(BaseRange.Offset(6, CurrentCol), GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_INVEST)), "RecapNumberStyle")
+            Utils.SetCellFormula(BaseRange.Offset(6, CurrentCol), Utils.GetFormattedString("CellRef", Year, ImportantCells.Item(Year).Item(KEY_INVEST)), "RecapNumberStyle")
         Else
-            SetCellValue(BaseRange.Offset(6, CurrentCol), 0, "RecapNumberStyle")
+            Utils.SetCellValue(BaseRange.Offset(6, CurrentCol), 0, "RecapNumberStyle")
         End If
-        SetCellFormula(BaseRange.Offset(7, CurrentCol), GetFormattedString("SumRange", BaseRange.Offset(4, CurrentCol).Address(False, False), BaseRange.Offset(6, CurrentCol).Address(False, False)), "RecapNumberStyle2")
+        Utils.SetCellFormula(BaseRange.Offset(7, CurrentCol), Utils.GetFormattedString("SumRange", BaseRange.Offset(4, CurrentCol).Address(False, False), BaseRange.Offset(6, CurrentCol).Address(False, False)), "RecapNumberStyle2")
     End Sub
 
     Private Sub DumpSummaryForLastYear(ByRef baseRange As Range, yList As List(Of Integer), year As Integer)
         Dim currentCol As Integer = yList.Count
         SummaryWorkSheet.Range(baseRange.Offset(0, currentCol).Address, baseRange.Offset(0, currentCol + 3).Address).Merge()
-        SetAreaValue2(baseRange.Offset(0, currentCol), year, "RecapHeaderStyle2")
+        Utils.SetAreaValue2(baseRange.Offset(0, currentCol), year, "RecapHeaderStyle2")
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol).Address, baseRange.Offset(3, currentCol).Address).Merge()
-        SetAreaValue2(baseRange.Offset(1, currentCol), GetFormattedString("InitialBudget", year), "RecapHeaderStyle2")
-        SetCellValue(baseRange.Offset(4, currentCol), 0, "RecapNumberStyle3")
-        SetCellValue(baseRange.Offset(5, currentCol), 0, "RecapNumberStyle3")
-        SetCellValue(baseRange.Offset(6, currentCol), 0, "RecapNumberStyle3")
-        SetCellFormula(baseRange.Offset(7, currentCol), GetFormattedString("SumRange", baseRange.Offset(4, currentCol).Address(False, False), baseRange.Offset(6, currentCol).Address(False, False)), "RecapNumberStyle3")
+        Utils.SetAreaValue2(baseRange.Offset(1, currentCol), Utils.GetFormattedString("InitialBudget", year), "RecapHeaderStyle2")
+        Utils.SetCellValue(baseRange.Offset(4, currentCol), 0, "RecapNumberStyle3")
+        Utils.SetCellValue(baseRange.Offset(5, currentCol), 0, "RecapNumberStyle3")
+        Utils.SetCellValue(baseRange.Offset(6, currentCol), 0, "RecapNumberStyle3")
+        Utils.SetCellFormula(baseRange.Offset(7, currentCol), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol).Address(False, False), baseRange.Offset(6, currentCol).Address(False, False)), "RecapNumberStyle3")
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 1).Address, baseRange.Offset(3, currentCol + 1).Address).Merge()
-        SetAreaValue2(baseRange.Offset(1, currentCol + 1), GetFormattedString("ModifiedBudget", year), "RecapHeaderStyle2")
-        SetCellValue(baseRange.Offset(4, currentCol + 1), 0, "RecapNumberStyle4")
-        SetCellValue(baseRange.Offset(5, currentCol + 1), 0, "RecapNumberStyle4")
-        SetCellValue(baseRange.Offset(6, currentCol + 1), 0, "RecapNumberStyle4")
-        SetCellFormula(baseRange.Offset(7, currentCol + 1), GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 1).Address(False, False)), "RecapNumberStyle4")
+        Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 1), Utils.GetFormattedString("ModifiedBudget", year), "RecapHeaderStyle2")
+        Utils.SetCellValue(baseRange.Offset(4, currentCol + 1), 0, "RecapNumberStyle4")
+        Utils.SetCellValue(baseRange.Offset(5, currentCol + 1), 0, "RecapNumberStyle4")
+        Utils.SetCellValue(baseRange.Offset(6, currentCol + 1), 0, "RecapNumberStyle4")
+        Utils.SetCellFormula(baseRange.Offset(7, currentCol + 1), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 1).Address(False, False)), "RecapNumberStyle4")
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 2).Address, baseRange.Offset(3, currentCol + 2).Address).Merge()
-        SetAreaValue2(baseRange.Offset(1, currentCol + 2), GetFormattedString("EngagedBudget", year), "RecapHeaderStyle2")
+        Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 2), Utils.GetFormattedString("EngagedBudget", year), "RecapHeaderStyle2")
         WriteSalaryForLastYear(baseRange, year, currentCol)
         WriteFonctForLastYear(baseRange, year, currentCol)
         WriteInvestForLastYear(baseRange, year, currentCol)
-        SetCellFormula(baseRange.Offset(7, currentCol + 2), GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 2).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle3")
+        Utils.SetCellFormula(baseRange.Offset(7, currentCol + 2), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 2).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle3")
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 3).Address, baseRange.Offset(3, currentCol + 3).Address).Merge()
-        SetAreaValue2(baseRange.Offset(1, currentCol + 3), GetFormattedString("AvailableBudget", year), "RecapHeaderStyle2")
-        SetCellFormula(baseRange.Offset(4, currentCol + 3), GetFormattedString("DirectDiff", baseRange.Offset(4, currentCol + 1).Address(False, False), baseRange.Offset(4, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
-        SetCellFormula(baseRange.Offset(5, currentCol + 3), GetFormattedString("DirectDiff", baseRange.Offset(5, currentCol + 1).Address(False, False), baseRange.Offset(5, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
-        SetCellFormula(baseRange.Offset(6, currentCol + 3), GetFormattedString("DirectDiff", baseRange.Offset(6, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
-        SetCellFormula(baseRange.Offset(7, currentCol + 3), GetFormattedString("DirectDiff", baseRange.Offset(7, currentCol + 1).Address(False, False), baseRange.Offset(7, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
+        Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 3), Utils.GetFormattedString("AvailableBudget", year), "RecapHeaderStyle2")
+        Utils.SetCellFormula(baseRange.Offset(4, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(4, currentCol + 1).Address(False, False), baseRange.Offset(4, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
+        Utils.SetCellFormula(baseRange.Offset(5, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(5, currentCol + 1).Address(False, False), baseRange.Offset(5, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
+        Utils.SetCellFormula(baseRange.Offset(6, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(6, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
+        Utils.SetCellFormula(baseRange.Offset(7, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(7, currentCol + 1).Address(False, False), baseRange.Offset(7, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
     End Sub
 
     Private Sub WriteInvestForLastYear(baseRange As Range, year As Integer, currentCol As Integer)
         Dim isInvest As Boolean = ImportantCells.Item(year).ContainsKey(KEY_INVEST)
         If isInvest Then
-            SetCellFormula(baseRange.Offset(6, currentCol + 2), GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_INVEST)), "RecapNumberStyle3")
+            Utils.SetCellFormula(baseRange.Offset(6, currentCol + 2), Utils.GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_INVEST)), "RecapNumberStyle3")
         Else
-            SetCellValue(baseRange.Offset(6, currentCol + 2), 0, "RecapNumberStyle3")
+            Utils.SetCellValue(baseRange.Offset(6, currentCol + 2), 0, "RecapNumberStyle3")
         End If
     End Sub
 
@@ -592,42 +526,22 @@ Public Class ThisAddIn
         Dim isFonct As Boolean = ImportantCells.Item(year).ContainsKey(KEY_FONCT)
         Dim isMission As Boolean = ImportantCells.Item(year).ContainsKey(KEY_MISSION)
         If isFonct AndAlso isMission Then
-            SetCellFormula(baseRange.Offset(5, currentCol + 2), GetFormattedString("DirectCellSum", year, ImportantCells.Item(year).Item(KEY_FONCT), ImportantCells.Item(year).Item(KEY_MISSION)), "RecapNumberStyle3")
+            Utils.SetCellFormula(baseRange.Offset(5, currentCol + 2), Utils.GetFormattedString("DirectCellSum", year, ImportantCells.Item(year).Item(KEY_FONCT), ImportantCells.Item(year).Item(KEY_MISSION)), "RecapNumberStyle3")
         ElseIf isFonct Then
-            SetCellFormula(baseRange.Offset(5, currentCol + 2), GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_FONCT)), "RecapNumberStyle3")
+            Utils.SetCellFormula(baseRange.Offset(5, currentCol + 2), Utils.GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_FONCT)), "RecapNumberStyle3")
         ElseIf isMission Then
-            SetCellFormula(baseRange.Offset(5, currentCol + 2), GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_MISSION)), "RecapNumberStyle3")
+            Utils.SetCellFormula(baseRange.Offset(5, currentCol + 2), Utils.GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_MISSION)), "RecapNumberStyle3")
         Else
-            SetCellValue(baseRange.Offset(5, currentCol + 2), 0, "RecapNumberStyle3")
+            Utils.SetCellValue(baseRange.Offset(5, currentCol + 2), 0, "RecapNumberStyle3")
         End If
     End Sub
 
     Private Sub WriteSalaryForLastYear(baseRange As Range, year As Integer, currentCol As Integer)
         If ImportantCells.Item(year).ContainsKey(KEY_SALARY) Then
-            SetCellFormula(baseRange.Offset(4, currentCol + 2), GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_SALARY)), "RecapNumberStyle3")
+            Utils.SetCellFormula(baseRange.Offset(4, currentCol + 2), Utils.GetFormattedString("CellRef", year, ImportantCells.Item(year).Item(KEY_SALARY)), "RecapNumberStyle3")
         Else
-            SetCellValue(baseRange.Offset(4, currentCol + 2), 0, "RecapNumberStyle3")
+            Utils.SetCellValue(baseRange.Offset(4, currentCol + 2), 0, "RecapNumberStyle3")
         End If
-    End Sub
-
-    Private Shared Sub SetCellValue(cell As Excel.Range, aValue As String, aStyle As String)
-        cell.Value = aValue
-        cell.Style = aStyle
-    End Sub
-    Private Shared Sub SetCellValue2(cell As Excel.Range, aValue As String, aStyle As String)
-        cell.Value2 = aValue
-        cell.Style = aStyle
-    End Sub
-    Private Shared Sub SetCellFormula(cell As Excel.Range, aValue As String, aStyle As String)
-        cell.Formula = aValue
-        cell.Style = aStyle
-    End Sub
-    Private Shared Sub SetCellRawFormula(cell As Excel.Range, aValue As String)
-        cell.Formula = aValue
-    End Sub
-    Private Shared Sub SetAreaValue2(cell As Excel.Range, aValue As String, aStyle As String)
-        cell.Value2 = aValue
-        cell.MergeArea.Style = aStyle
     End Sub
     Private Function SearchAddressWithPattern(v As String, kind As SummaryCellKind, exact As Boolean) As String
         For Each cell As Excel.Range In SummaryWorkSheet.Range("A1:A18").Cells
@@ -638,10 +552,6 @@ Public Class ThisAddIn
         Next
         SummaryCellsNotFound.Add(kind, True)
         Return Nothing
-    End Function
-
-    Private Shared Function GetFormattedString(Format As String, ParamArray Value() As Object) As String
-        Return String.Format(CultureInfo.CurrentCulture, GetMessage(Format), Value)
     End Function
     Private Sub GetCDD(fileName As String)
         NameStep("Récupération des CDD")
@@ -663,7 +573,7 @@ Public Class ThisAddIn
                 .BRubrique = "SALAIRE",
                 .CNumeroFlux = CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "B{0}", NumRow)).Value2,
                 .DNom = CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "I{0}", NumRow)).Value2,
-                .ELibelle = GetFormattedString("LiasseDate", Format(CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "D{0}", NumRow)).Value, "dd/MM/yyyy"), Format(CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "E{0}", NumRow)).Value, "dd/MM/yyyy")),
+                .ELibelle = Utils.GetFormattedString("LiasseDate", Format(CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "D{0}", NumRow)).Value, "dd/MM/yyyy"), Format(CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "E{0}", NumRow)).Value, "dd/MM/yyyy")),
                 .FMntEngHtr = CDbl(CDDWorksheet.Range(String.Format(CultureInfo.CurrentCulture, "N{0}", NumRow)).Value2),
                 .GMontantPA = 0,
                 .HRapprochmt = "",
@@ -953,34 +863,28 @@ Public Class ThisAddIn
     End Function
 
     Private Sub CreateSheetForYear(year As Integer, firstYear As Boolean, lastYear As Boolean)
+        Dim NewWorsheet As Excel.Worksheet
         If firstYear Then
             'No pending order
-            Dim NewWorsheet As Excel.Worksheet = CType(CurrentWorkbook.Worksheets.Add(After:=SummaryWorkSheet), Excel.Worksheet)
+            NewWorsheet = CType(CurrentWorkbook.Worksheets.Add(After:=SummaryWorkSheet), Excel.Worksheet)
             NewWorsheet.Name = year
             AllWorksheets.Add(year, NewWorsheet)
             FeedWorkSheet(NewWorsheet, year)
-            AutoFit(NewWorsheet)
         ElseIf Not lastYear Then
             'Potential pending orders
-            Dim NewWorsheet As Excel.Worksheet = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
+            NewWorsheet = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
             NewWorsheet.Name = year
             AllWorksheets.Add(year, NewWorsheet)
             FeedWorkSheetWithPendings(NewWorsheet, year)
-            AutoFit(NewWorsheet)
         Else
             'Potential pending orders past and present years
-            Dim NewWorsheet As Excel.Worksheet = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
+            NewWorsheet  = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
             NewWorsheet.Name = year
             AllWorksheets.Add(year, NewWorsheet)
             FeedWorkSheetWithAllPendings(NewWorsheet, year)
-            AutoFit(NewWorsheet)
         End If
+        Utils.AutoFit(NewWorsheet)
     End Sub
-
-    Private Shared Sub AutoFit(newWorsheet As Excel.Worksheet)
-        newWorsheet.Range("A:N").EntireColumn.AutoFit()
-    End Sub
-
     Private Sub FeedWorkSheet(newWorsheet As Excel.Worksheet, year As Integer)
         Dim MergedData As New Dictionary(Of String, List(Of BookLine)) From {
         {KEY_FONCT, New List(Of BookLine)},
@@ -1066,7 +970,7 @@ Public Class ThisAddIn
                     StartRange.Cells(CurrentLine, 8).Value2 = Line.HRapprochmt
                     StartRange.Cells(CurrentLine, 9).Value2 = Line.IRefFactF
                     StartRange.Cells(CurrentLine, 10).Value2 = Line.JDatePce
-                    StartRange.Cells(CurrentLine, 11).Value2 = ExtractedData.GetDateCompteAsText(Line)
+                    StartRange.Cells(CurrentLine, 11).Value2 = Utils.GetDateCompteAsText(Line)
                     StartRange.Cells(CurrentLine, 12).Value2 = Line.LNumPiece
                     AddPossibleCommentToLine(Line)
                     StartRange.Cells(CurrentLine, 13).Value2 = Line.MComment
@@ -1077,7 +981,7 @@ Public Class ThisAddIn
                 Next
                 Dim LastLine As Integer = CurrentLine - 1
                 StartRange.Cells(CurrentLine, SUM_COL - 1).Value2 = LABEL_SUM
-                CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Formula = GetFormattedString("SumRange", GetFormattedString("CellAddress", SUM_COL_LETTER, FirstLine), GetFormattedString("CellAddress", SUM_COL_LETTER, LastLine))
+                CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Formula = Utils.GetFormattedString("SumRange", Utils.GetFormattedString("CellAddress", SUM_COL_LETTER, FirstLine), Utils.GetFormattedString("CellAddress", SUM_COL_LETTER, LastLine))
                 CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Style = "SumStyle"
                 ImportantCells.Item(year).Add(Key, CType(StartRange.Cells(CurrentLine, SUM_COL), Excel.Range).Address(False, False))
                 CurrentLine += 1

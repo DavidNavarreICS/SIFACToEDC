@@ -126,10 +126,8 @@ Public Class ExtractedData
     End Sub
     Private Function CopyWorkbook() As Excel.Workbook
         Dim oldWorkbook As Excel.Workbook = AddinApplication.Workbooks.Open(aSourceName)
-        'oldWorkbook.IsAddin = True
         Dim OriginalWorksheet As Excel.Worksheet = oldWorkbook.ActiveSheet
         Dim newWorkbook As Excel.Workbook = AddinApplication.Workbooks.Add()
-        'newWorkbook.IsAddin = True
         Dim WorksheetToRemove As Excel.Worksheet = newWorkbook.ActiveSheet
         OriginalWorksheet.Copy(WorksheetToRemove)
         WorksheetToRemove.Delete()
@@ -154,10 +152,10 @@ Public Class ExtractedData
     Private Sub ExtractFromTo(baseWorksheet As Excel.Worksheet, newWorksheet As Excel.Worksheet, trashWorksheet As Excel.Worksheet, previousExtraction As ExtractedData)
         ReduceLines(previousExtraction)
         Globals.ThisAddIn.NameStep("Générations des feuilles")
-        CopyHeaders(baseWorksheet, trashWorksheet)
-        CopyHeaders(baseWorksheet, newWorksheet)
-        DumpData(newWorksheet, ReducedTable)
-        DumpData(trashWorksheet, TrashTable)
+        Utils.CopyHeaders(baseWorksheet, trashWorksheet)
+        Utils.CopyHeaders(baseWorksheet, newWorksheet)
+        Utils.DumpData(newWorksheet, ReducedTable)
+        Utils.DumpData(trashWorksheet, TrashTable)
     End Sub
     Private Sub ReduceTable()
         For Each Key As String In FullTable.Keys
@@ -182,56 +180,51 @@ Public Class ExtractedData
                 Select Case Kind
                     Case CASE_COMMANDE_PAIEMENT
                         Line.KDCompt = MAX_K_DCompt
-                        If IsInvest(Line) Then
-                            AddLineToTable(CASE_COMMANDE_PAIEMENT_INVEST, PreparedLines, Line)
+                        If Utils.IsInvest(Line) Then
+                            Utils.AddLineToTable(CASE_COMMANDE_PAIEMENT_INVEST, PreparedLines, Line)
                         Else
-                            AddLineToTable(CASE_COMMANDE_PAIEMENT, PreparedLines, Line)
+                            Utils.AddLineToTable(CASE_COMMANDE_PAIEMENT, PreparedLines, Line)
                         End If
                     Case CASE_COMMANDE_AJUSTEMENT
                         Line.KDCompt = MAX_K_DCompt
-                        If IsInvest(Line) Then
-                            AddLineToTable(CASE_COMMANDE_AJUSTEMENT_INVEST, PreparedLines, Line)
+                        If Utils.IsInvest(Line) Then
+                            Utils.AddLineToTable(CASE_COMMANDE_AJUSTEMENT_INVEST, PreparedLines, Line)
                         Else
-                            AddLineToTable(CASE_COMMANDE_AJUSTEMENT, PreparedLines, Line)
+                            Utils.AddLineToTable(CASE_COMMANDE_AJUSTEMENT, PreparedLines, Line)
                         End If
                     Case CASE_COMMANDE
                         Line.KDCompt = MAX_K_DCompt
-                        If IsInvest(Line) Then
-                            AddLineToTable(CASE_COMMANDE_INVEST, PreparedLines, Line)
+                        If Utils.IsInvest(Line) Then
+                            Utils.AddLineToTable(CASE_COMMANDE_INVEST, PreparedLines, Line)
                         Else
-                            AddLineToTable(CASE_COMMANDE, PreparedLines, Line)
+                            Utils.AddLineToTable(CASE_COMMANDE, PreparedLines, Line)
                         End If
                     Case CASE_MISSION_PAIEMENT
                         Line.KDCompt = MAX_K_DCompt
-                        AddLineToTable(CASE_MISSION_PAIEMENT, PreparedLines, Line)
+                        Utils.AddLineToTable(CASE_MISSION_PAIEMENT, PreparedLines, Line)
                     Case CASE_MISSION
                         Line.KDCompt = MAX_K_DCompt
-                        AddLineToTable(CASE_MISSION, PreparedLines, Line)
+                        Utils.AddLineToTable(CASE_MISSION, PreparedLines, Line)
                     Case CASE_REIMPUTATION
-                        If IsInvest(Line) Then
-                            AddLineToTable(CASE_REIMPUTATION_INVEST, PreparedLines, Line)
+                        If Utils.IsInvest(Line) Then
+                            Utils.AddLineToTable(CASE_REIMPUTATION_INVEST, PreparedLines, Line)
                         Else
-                            AddLineToTable(CASE_REIMPUTATION, PreparedLines, Line)
+                            Utils.AddLineToTable(CASE_REIMPUTATION, PreparedLines, Line)
                         End If
                     Case CASE_AVOIR_PAIEMENT
-                        If IsInvest(Line) Then
-                            AddLineToTable(CASE_AVOIR_PAIEMENT_INVEST, PreparedLines, Line)
+                        If Utils.IsInvest(Line) Then
+                            Utils.AddLineToTable(CASE_AVOIR_PAIEMENT_INVEST, PreparedLines, Line)
                         Else
-                            AddLineToTable(CASE_AVOIR_PAIEMENT, PreparedLines, Line)
+                            Utils.AddLineToTable(CASE_AVOIR_PAIEMENT, PreparedLines, Line)
                         End If
                     Case Else
-                        AddLineToTable(CASE_UNUSED, PreparedLines, Line)
+                        Utils.AddLineToTable(CASE_UNUSED, PreparedLines, Line)
                 End Select
                 Globals.ThisAddIn.NextStep()
             Next
             PreReducedTable.Add(Key, PreparedLines)
         Next
     End Sub
-
-    Private Shared Function IsInvest(line As BookLine) As Boolean
-        Return line.ACptegen.Trim.StartsWith("2", StringComparison.CurrentCulture)
-    End Function
-
     Private Sub ReduceLines(previousExtraction As ExtractedData)
         PreparePreviousData(previousExtraction)
 
@@ -332,71 +325,12 @@ Public Class ExtractedData
             previousExtraction.PendingInvests.Clear()
         End If
     End Sub
-
     Private Sub AddLineToReducedTable(keyReduced As String, keyPrepared As String, preparedLines As Dictionary(Of String, Collection(Of BookLine)))
-        AddLineFromTableToTable(keyReduced, ReducedTable, keyPrepared, preparedLines)
+        Utils.AddLineFromTableToTable(ReducedTable.Item(keyReduced), preparedLines.Item(keyPrepared))
     End Sub
     Private Sub AddLineToTrashTable(keyTrashed As String, keyPrepared As String, preparedLines As Dictionary(Of String, Collection(Of BookLine)))
-        AddLineFromTableToTable(keyTrashed, TrashTable, keyPrepared, preparedLines)
+        Utils.AddLineFromTableToTable(TrashTable.Item(keyTrashed), preparedLines.Item(keyPrepared))
     End Sub
-    Private Shared Sub AddLineFromTableToTable(keyReduced As String, destTable As Dictionary(Of String, Collection(Of BookLine)), keyPrepared As String, sourceTable As Dictionary(Of String, Collection(Of BookLine)))
-        For Each line As BookLine In sourceTable.Item(keyPrepared)
-            destTable.Item(keyReduced).Add(line)
-        Next
-    End Sub
-    Private Shared Sub AddLineToTable(key As String, preparedLines As Dictionary(Of String, Collection(Of BookLine)), line As BookLine)
-        If Not preparedLines.ContainsKey(key) Then
-            Dim NewLines As New Collection(Of BookLine) From {
-                line
-            }
-            preparedLines.Add(key, NewLines)
-        Else
-            preparedLines.Item(key).Add(line)
-        End If
-    End Sub
-    Private Shared Sub CopyHeaders(baseWorksheet As Excel.Worksheet, newWorksheet As Excel.Worksheet)
-        Dim SourceRange As Excel.Range = baseWorksheet.UsedRange.Rows(1)
-        Dim DestRange As Excel.Range = newWorksheet.Range("A1")
-        SourceRange.Copy(DestRange)
-        For I As Integer = 1 To 12
-            Dim RDest As Excel.Range = DestRange.Cells(1, I)
-            Dim RSource As Excel.Range = SourceRange.Cells(1, I)
-            RDest.ColumnWidth = RSource.ColumnWidth
-        Next
-    End Sub
-    Private Shared Sub DumpData(worksheet As Excel.Worksheet, dataTable As Dictionary(Of String, Collection(Of BookLine)))
-        Dim CurrentLine As Integer = 1
-        Dim StartRange As Excel.Range = worksheet.Range("A3")
-        For Each LineCollection As Collection(Of BookLine) In dataTable.Values
-            For Each Line As BookLine In LineCollection
-                StartRange.Cells(CurrentLine, 1).Value2 = Line.ACptegen
-                StartRange.Cells(CurrentLine, 2).Value2 = Line.BRubrique
-                StartRange.Cells(CurrentLine, 3).Value2 = Line.CNumeroFlux
-                StartRange.Cells(CurrentLine, 4).Value2 = Line.DNom
-                StartRange.Cells(CurrentLine, 5).Value2 = Line.ELibelle
-                StartRange.Cells(CurrentLine, 6).Value2 = Line.FMntEngHtr
-                StartRange.Cells(CurrentLine, 7).Value2 = Line.GMontantPA
-                StartRange.Cells(CurrentLine, 8).Value2 = Line.HRapprochmt
-                StartRange.Cells(CurrentLine, 9).Value2 = Line.IRefFactF
-                StartRange.Cells(CurrentLine, 10).Value2 = Line.JDatePce
-                StartRange.Cells(CurrentLine, 11).Value2 = GetDateCompteAsText(Line)
-                StartRange.Cells(CurrentLine, 12).Value2 = Line.LNumPiece
-                CurrentLine += 1
-                Globals.ThisAddIn.NextStep()
-                Globals.ThisAddIn.NextStep()
-                Globals.ThisAddIn.NextStep()
-                Globals.ThisAddIn.NextStep()
-                Globals.ThisAddIn.NextStep()
-            Next
-        Next
-    End Sub
-    Public Shared Function GetDateCompteAsText(line As BookLine) As String
-        If line IsNot Nothing AndAlso line.KDCompt IsNot Nothing Then
-            Return line.KDCompt.AsText
-        Else
-            Return ""
-        End If
-    End Function
     Private Sub FeedTable(baseWorksheet As Excel.Worksheet)
         Dim FullRange As Excel.Range = baseWorksheet.UsedRange.End(Microsoft.Office.Interop.Excel.XlDirection.xlDown)
         For RowNum As Integer = 1 To NumberOfLines
@@ -409,7 +343,7 @@ Public Class ExtractedData
                 FullTable.Add(Key, Data)
             End If
 
-            Dim NewLine As BookLine = ReadLine(FullRange, RowNum)
+            Dim NewLine As BookLine = Utils.ReadLine(FullRange, RowNum)
             NewLine.MComment = ""
             NewLine.NFrom = ""
             Data.Add(NewLine)
@@ -419,52 +353,4 @@ Public Class ExtractedData
             Globals.ThisAddIn.NextStep()
         Next
     End Sub
-    Public Shared Function ReadLine(fullRange As Range, rowNum As Integer) As BookLine
-        If fullRange IsNot Nothing Then
-            Return New BookLine With {
-            .ACptegen = fullRange.Cells(rowNum, 1).Value2,
-            .BRubrique = fullRange.Cells(rowNum, 2).Value2,
-            .CNumeroFlux = fullRange.Cells(rowNum, 3).Value2,
-            .DNom = fullRange.Cells(rowNum, 4).Value2,
-            .ELibelle = fullRange.Cells(rowNum, 5).Value2,
-            .FMntEngHtr = GetNumber(fullRange, rowNum, 6),
-            .GMontantPA = GetNumber(fullRange, rowNum, 7),
-            .HRapprochmt = fullRange.Cells(rowNum, 8).Value2,
-            .IRefFactF = fullRange.Cells(rowNum, 9).Value2,
-            .JDatePce = fullRange.Cells(rowNum, 10).Value2,
-            .KDCompt = GetDateCompte(fullRange.Cells(rowNum, 11).Value2),
-            .LNumPiece = fullRange.Cells(rowNum, 12).Value2
-        }
-        Else
-            Return Nothing
-        End If
-    End Function
-    Private Shared Function GetDateCompte(textValue As String) As DateCompte
-        If textValue <> "" Then
-            Return New DateCompte(textValue)
-        Else
-            Return Nothing
-        End If
-    End Function
-    Private Shared Function GetNumber(fullRange As Range, rowNum As Integer, colNum As Integer) As Double
-        Dim TextToConvert As String = fullRange.Cells(rowNum, colNum).Value2
-        Dim IndexVirgule As Integer = TextToConvert.IndexOf(",", StringComparison.Ordinal)
-        Dim IndexPoint As Integer = TextToConvert.IndexOf(".", StringComparison.Ordinal)
-        If IndexPoint = -1 Then
-            'French format
-            Return Double.Parse(TextToConvert, CultureInfo.CurrentCulture)
-        ElseIf IndexVirgule = -1 Then
-            'Invariant culture format
-            Return Double.Parse(TextToConvert, CultureInfo.InvariantCulture)
-        ElseIf IndexVirgule < IndexPoint Then
-            'Invariant culture format
-            Return Double.Parse(TextToConvert, CultureInfo.InvariantCulture)
-        Else
-            'Space format
-            Dim FirstSplit As String() = TextToConvert.Split(".")
-            Dim SecondSplit As String() = FirstSplit(1).Split(",")
-            Dim NewTextToConvert As String = FirstSplit(0) & "," & SecondSplit(0) & "." & SecondSplit(1)
-            Return Double.Parse(NewTextToConvert, CultureInfo.InvariantCulture)
-        End If
-    End Function
 End Class

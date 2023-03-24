@@ -51,15 +51,12 @@
         End If
         Return Me.Equals(CType(obj, DateCompte))
     End Function
-
     Public Overloads Function Equals(other As DateCompte) As Boolean Implements IEquatable(Of DateCompte).Equals
         Return CompareTo(other)
     End Function
-
     Public Overrides Function GetHashCode() As Integer
         Return (aDay, aMonth, aYear).GetHashCode()
     End Function
-
     Public Shared Operator =(left As DateCompte, right As DateCompte) As Boolean
         If left IsNot Nothing Then
             Return left.CompareTo(right) = 0
@@ -81,11 +78,9 @@
             Return False
         End If
     End Operator
-
     Public Shared Operator <(left As DateCompte, right As DateCompte) As Boolean
         Return Not left >= right
     End Operator
-
     Public Shared Operator >=(left As DateCompte, right As DateCompte) As Boolean
         If left IsNot Nothing Then
             Return left.CompareTo(right) >= 0
@@ -93,9 +88,7 @@
             Return False
         End If
     End Operator
-
     Public Shared Operator <=(left As DateCompte, right As DateCompte) As Boolean
         Return Not left > right
     End Operator
-
 End Class

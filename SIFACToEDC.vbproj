@@ -228,9 +228,11 @@
     <Compile Include="RibbonEDC.vb">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="SalaryLineComparison.vb" />
     <Compile Include="ThisAddIn.vb">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Utils.vb" />
     <EmbeddedResource Include="ExecutionStatus.resx">
       <DependentUpon>ExecutionStatus.vb</DependentUpon>
     </EmbeddedResource>
