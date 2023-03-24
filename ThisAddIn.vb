@@ -434,111 +434,79 @@ Public Class ThisAddIn
         Dim CurrentYearAmountCol As Integer = LastClosedCol + 2
         Dim CurrentCol As Integer = CurrentYearAmountCol + 3
         If FirstCol > LastClosedCol Then
-            SummaryWorkSheet.Range(BaseRange.Offset(0, CurrentCol).Address, BaseRange.Offset(0, CurrentCol + 1).Address).Merge()
-            BaseRange.Offset(0, CurrentCol).Value2 = GetFormattedString("HeaderOverYear", yList.Max)
-            BaseRange.Offset(0, CurrentCol).MergeArea.Style = "RecapHeaderStyle"
-            SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol).Address, BaseRange.Offset(3, CurrentCol).Address).Merge()
-            BaseRange.Offset(1, CurrentCol).Value2 = "Reste Total à dépenser (y compris frais de Gestion UPS)"
-            BaseRange.Offset(1, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(4, CurrentCol).Value2 = ""
-            BaseRange.Offset(4, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(5, CurrentCol).Value2 = ""
-            BaseRange.Offset(5, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(6, CurrentCol).Value2 = ""
-            BaseRange.Offset(6, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL) Then
-                BaseRange.Offset(7, CurrentCol).Formula = GetFormattedString("DirectDiff", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
-            Else
-                BaseRange.Offset(7, CurrentCol).Value2 = ""
-            End If
-            BaseRange.Offset(7, CurrentCol).Style = "RecapNumberStyle5"
-
-            BaseRange.Offset(0, CurrentCol + 1).Value2 = ""
-            SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
-            BaseRange.Offset(1, CurrentCol + 1).Value2 = "Reste Net à dépenser (net des Frais de Gestion UPS)"
-            BaseRange.Offset(1, CurrentCol + 1).MergeArea.Style = "RecapHeaderStyle"
-            BaseRange.Offset(1, CurrentCol + 1).MergeArea.Rows.RowHeight = BaseRange.Offset(0, CurrentCol + 1).RowHeight * 1.1
-            BaseRange.Offset(4, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(4, CurrentCol + 1).Style = "RecapNumberStyle2"
-            BaseRange.Offset(5, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(5, CurrentCol + 1).Style = "RecapNumberStyle2"
-            BaseRange.Offset(6, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(6, CurrentCol + 1).Style = "RecapNumberStyle2"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL_NET) Then
-                BaseRange.Offset(7, CurrentCol + 1).Formula = GetFormattedString("DirectDiff", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
-            Else
-                BaseRange.Offset(7, CurrentCol + 1).Value2 = ""
-            End If
-            BaseRange.Offset(7, CurrentCol + 1).Style = "RecapNumberStyle2"
-
-            SummaryWorkSheet.Range(BaseRange.Offset(9, CurrentCol + 1).Address, BaseRange.Offset(9, CurrentCol + 2).Address).Merge()
-            BaseRange.Offset(9, CurrentCol + 1).Value2 = "Montant total disponible :"
-            BaseRange.Offset(9, CurrentCol + 1).MergeArea.Style = "RecapHeaderStyle5"
-
-            BaseRange.Offset(9, CurrentCol + 3).Formula = GetFormattedString("DirectCellSum3", BaseRange.Offset(7, CurrentYearAmountCol + 2).Address(False, False), BaseRange.Offset(7, CurrentCol + 1).Address(False, False))
-            BaseRange.Offset(9, CurrentCol + 3).Style = "RecapNumberStyle2"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.CUMUL) Then
-                SummaryWorkSheet.Range(CumulAddress).Formula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
-            End If
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.BUDGET) Then
-                SummaryWorkSheet.Range(BudgetAddress).Formula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
-            End If
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.ENGAGED) Then
-                SummaryWorkSheet.Range(EngagedAddress).Formula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
-            End If
+            DumpSummaryFinalRecapWithNoPreviousYear(BaseRange, TotalNetAddress, TotalAddress, CumulAddress, BudgetAddress, EngagedAddress, yList, CurrentYearAmountCol, CurrentCol)
         Else
-            SummaryWorkSheet.Range(BaseRange.Offset(0, CurrentCol).Address, BaseRange.Offset(0, CurrentCol + 1).Address).Merge()
-            BaseRange.Offset(0, CurrentCol).Value2 = GetFormattedString("HeaderOverYear", yList.Max)
-            BaseRange.Offset(0, CurrentCol).MergeArea.Style = "RecapHeaderStyle"
-            SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol).Address, BaseRange.Offset(3, CurrentCol).Address).Merge()
-            BaseRange.Offset(1, CurrentCol).Value2 = "Reste Total à dépenser (y compris frais de Gestion UPS)"
-            BaseRange.Offset(1, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(4, CurrentCol).Value2 = ""
-            BaseRange.Offset(4, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(5, CurrentCol).Value2 = ""
-            BaseRange.Offset(5, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            BaseRange.Offset(6, CurrentCol).Value2 = ""
-            BaseRange.Offset(6, CurrentCol).MergeArea.Style = "RecapHeaderStyle6"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL) Then
-                BaseRange.Offset(7, CurrentCol).Formula = GetFormattedString("DirectDiff2", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+            DumpSummaryFinalRecapWithPreviousYear(BaseRange, TotalNetAddress, TotalAddress, CumulAddress, BudgetAddress, EngagedAddress, yList, FirstCol, LastClosedCol, CurrentYearAmountCol, CurrentCol)
+        End If
+    End Sub
+
+    Private Sub DumpSummaryFinalRecapWithPreviousYear(BaseRange As Range, TotalNetAddress As String, TotalAddress As String, CumulAddress As String, BudgetAddress As String, EngagedAddress As String, yList As List(Of Integer), FirstCol As Integer, LastClosedCol As Integer, CurrentYearAmountCol As Integer, CurrentCol As Integer)
+        DumpSummaryFinalRecapCommonParts(BaseRange, BudgetAddress, EngagedAddress, yList, CurrentYearAmountCol, CurrentCol)
+        DumpSummaryFinalRecapSpecificParts(True, BaseRange, TotalNetAddress, TotalAddress, CumulAddress, FirstCol, LastClosedCol, CurrentYearAmountCol, CurrentCol)
+    End Sub
+    Private Sub DumpSummaryFinalRecapWithNoPreviousYear(BaseRange As Range, TotalNetAddress As String, TotalAddress As String, CumulAddress As String, BudgetAddress As String, EngagedAddress As String, yList As List(Of Integer), CurrentYearAmountCol As Integer, CurrentCol As Integer)
+        DumpSummaryFinalRecapCommonParts(BaseRange, BudgetAddress, EngagedAddress, yList, CurrentYearAmountCol, CurrentCol)
+        DumpSummaryFinalRecapSpecificParts(False, BaseRange, TotalNetAddress, TotalAddress, CumulAddress, 0, 0, CurrentYearAmountCol, CurrentCol)
+    End Sub
+    Private Sub DumpSummaryFinalRecapSpecificParts(fullRecap As Boolean, BaseRange As Range, TotalNetAddress As String, TotalAddress As String, CumulAddress As String, FirstCol As Integer, LastClosedCol As Integer, CurrentYearAmountCol As Integer, CurrentCol As Integer)
+        If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL) Then
+            Dim specificFormula As String
+            If fullRecap Then
+                specificFormula = GetFormattedString("DirectDiff2", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
             Else
-                BaseRange.Offset(7, CurrentCol).Value2 = ""
+                specificFormula = GetFormattedString("DirectDiff", TotalAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
             End If
-            BaseRange.Offset(7, CurrentCol).Style = "RecapNumberStyle5"
-
-            BaseRange.Offset(0, CurrentCol + 1).Value2 = ""
-            SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
-            BaseRange.Offset(1, CurrentCol + 1).Value2 = "Reste Net à dépenser (net des Frais de Gestion UPS)"
-            BaseRange.Offset(1, CurrentCol + 1).MergeArea.Style = "RecapHeaderStyle"
-            BaseRange.Offset(1, CurrentCol + 1).MergeArea.Rows.RowHeight = BaseRange.Offset(0, CurrentCol + 1).RowHeight * 1.1
-            BaseRange.Offset(4, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(4, CurrentCol + 1).Style = "RecapNumberStyle2"
-            BaseRange.Offset(5, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(5, CurrentCol + 1).Style = "RecapNumberStyle2"
-            BaseRange.Offset(6, CurrentCol + 1).Value2 = ""
-            BaseRange.Offset(6, CurrentCol + 1).Style = "RecapNumberStyle2"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL_NET) Then
-                BaseRange.Offset(7, CurrentCol + 1).Formula = GetFormattedString("DirectDiff2", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+            SetCellFormula(BaseRange.Offset(7, CurrentCol), specificFormula, "RecapNumberStyle5")
+        Else
+            SetCellValue2(BaseRange.Offset(7, CurrentCol), "", "RecapNumberStyle5")
+        End If
+        If Not SummaryCellsNotFound.Item(SummaryCellKind.TOTAL_NET) Then
+            Dim specificFormula As String
+            If fullRecap Then
+                specificFormula = GetFormattedString("DirectDiff2", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
             Else
-                BaseRange.Offset(7, CurrentCol + 1).Value2 = ""
+                specificFormula = GetFormattedString("DirectDiff", TotalNetAddress, BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
             End If
-            BaseRange.Offset(7, CurrentCol + 1).Style = "RecapNumberStyle2"
+            SetCellFormula(BaseRange.Offset(7, CurrentCol + 1), specificFormula, "RecapNumberStyle2")
+        Else
+            SetCellValue2(BaseRange.Offset(7, CurrentCol + 1), "", "RecapNumberStyle2")
+        End If
+        If Not SummaryCellsNotFound.Item(SummaryCellKind.CUMUL) Then
+            Dim specificFormula As String
+            If fullRecap Then
+                specificFormula = GetFormattedString("DirectCellSum2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
+            Else
+                specificFormula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
+            End If
+            SetCellRawFormula(SummaryWorkSheet.Range(CumulAddress), specificFormula)
+        End If
+    End Sub
 
-            SummaryWorkSheet.Range(BaseRange.Offset(9, CurrentCol + 1).Address, BaseRange.Offset(9, CurrentCol + 2).Address).Merge()
-            BaseRange.Offset(9, CurrentCol + 1).Value2 = "Montant total disponible :"
-            BaseRange.Offset(9, CurrentCol + 1).MergeArea.Style = "RecapHeaderStyle5"
+    Private Sub DumpSummaryFinalRecapCommonParts(BaseRange As Range, BudgetAddress As String, EngagedAddress As String, yList As List(Of Integer), CurrentYearAmountCol As Integer, CurrentCol As Integer)
+        SummaryWorkSheet.Range(BaseRange.Offset(0, CurrentCol).Address, BaseRange.Offset(0, CurrentCol + 1).Address).Merge()
+        SetAreaValue2(BaseRange.Offset(0, CurrentCol), GetFormattedString("HeaderOverYear", yList.Max), "RecapHeaderStyle")
+        SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol).Address, BaseRange.Offset(3, CurrentCol).Address).Merge()
+        SetAreaValue2(BaseRange.Offset(1, CurrentCol), "Reste Total à dépenser (y compris frais de Gestion UPS)", "RecapHeaderStyle6")
+        SetAreaValue2(BaseRange.Offset(4, CurrentCol), "", "RecapHeaderStyle6")
+        SetAreaValue2(BaseRange.Offset(5, CurrentCol), "", "RecapHeaderStyle6")
+        SetAreaValue2(BaseRange.Offset(6, CurrentCol), "", "RecapHeaderStyle6")
 
-            BaseRange.Offset(9, CurrentCol + 3).Formula = GetFormattedString("DirectCellSum3", BaseRange.Offset(7, CurrentYearAmountCol + 2).Address(False, False), BaseRange.Offset(7, CurrentCol + 1).Address(False, False))
-            BaseRange.Offset(9, CurrentCol + 3).Style = "RecapNumberStyle2"
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.CUMUL) Then
-                SummaryWorkSheet.Range(CumulAddress).Formula = GetFormattedString("DirectCellSum2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False), BaseRange.Offset(7, FirstCol).Address(False, False), BaseRange.Offset(7, LastClosedCol).Address(False, False))
-            End If
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.BUDGET) Then
-                SummaryWorkSheet.Range(BudgetAddress).Formula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False))
-            End If
-            If Not SummaryCellsNotFound.Item(SummaryCellKind.ENGAGED) Then
-                SummaryWorkSheet.Range(EngagedAddress).Formula = GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False))
-            End If
+        SetAreaValue2(BaseRange.Offset(0, CurrentCol + 1), "", "RecapHeaderStyle")
+        SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
+        SetAreaValue2(BaseRange.Offset(1, CurrentCol + 1), "Reste Net à dépenser (net des Frais de Gestion UPS)", "RecapHeaderStyle")
+        BaseRange.Offset(1, CurrentCol + 1).MergeArea.Rows.RowHeight = BaseRange.Offset(0, CurrentCol + 1).RowHeight * 1.1
+        SetAreaValue2(BaseRange.Offset(4, CurrentCol + 1), "", "RecapNumberStyle2")
+        SetAreaValue2(BaseRange.Offset(5, CurrentCol + 1), "", "RecapNumberStyle2")
+        SetAreaValue2(BaseRange.Offset(6, CurrentCol + 1), "", "RecapNumberStyle2")
+
+        SummaryWorkSheet.Range(BaseRange.Offset(9, CurrentCol + 1).Address, BaseRange.Offset(9, CurrentCol + 2).Address).Merge()
+        SetAreaValue2(BaseRange.Offset(9, CurrentCol + 1), "Montant total disponible :", "RecapHeaderStyle5")
+        SetCellFormula(BaseRange.Offset(9, CurrentCol + 3), GetFormattedString("DirectCellSum3", BaseRange.Offset(7, CurrentYearAmountCol + 2).Address(False, False), BaseRange.Offset(7, CurrentCol + 1).Address(False, False)), "RecapNumberStyle2")
+        If Not SummaryCellsNotFound.Item(SummaryCellKind.BUDGET) Then
+            SetCellRawFormula(SummaryWorkSheet.Range(BudgetAddress), GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol).Address(False, False)))
+        End If
+        If Not SummaryCellsNotFound.Item(SummaryCellKind.ENGAGED) Then
+            SetCellRawFormula(SummaryWorkSheet.Range(EngagedAddress), GetFormattedString("CellRef2", BaseRange.Offset(7, CurrentYearAmountCol + 1).Address(False, False)))
         End If
     End Sub
 
@@ -653,6 +621,9 @@ Public Class ThisAddIn
     Private Shared Sub SetCellFormula(cell As Excel.Range, aValue As String, aStyle As String)
         cell.Formula = aValue
         cell.Style = aStyle
+    End Sub
+    Private Shared Sub SetCellRawFormula(cell As Excel.Range, aValue As String)
+        cell.Formula = aValue
     End Sub
     Private Shared Sub SetAreaValue2(cell As Excel.Range, aValue As String, aStyle As String)
         cell.Value2 = aValue
