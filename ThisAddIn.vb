@@ -1,9 +1,7 @@
 ﻿Imports System.Diagnostics
-Imports System.Drawing
 Imports System.Globalization
 Imports System.IO
 Imports Microsoft.Office.Interop.Excel
-Imports SIFACToEDC.ExtractedData
 <Assembly: CLSCompliant(False)>
 Public Class ThisAddIn
     Private Const FILE_NAME_PATTERN As String = "*.xls*"
@@ -315,14 +313,19 @@ Public Class ThisAddIn
         Return True
     End Function
     Public Sub DoIntegration()
+        Dim CDDWorkbook As Workbook = Nothing
         Dim dialog As Microsoft.Office.Core.FileDialog
         dialog = Application.FileDialog(Microsoft.Office.Core.MsoFileDialogType.msoFileDialogFilePicker)
-        dialog.Filters.Add("fichier salaires CDD *.xlsx", "*.xlsx", 1)
-        dialog.AllowMultiSelect = False
-        If dialog.Show = -1 Then
+            dialog.Filters.Add("fichier salaires CDD *.xlsx", "*.xlsx", 1)
+            dialog.AllowMultiSelect = False
+            If dialog.Show = -1 Then
+                CDDWorkbook = GetCDDWorkbook(dialog.SelectedItems.Item(1))
+            End If
+        If CDDWorkbook IsNot Nothing Then
             ProgressDialog.Show()
             SetProgress(0)
-            GetCDD(dialog.SelectedItems.Item(1))
+            GetCDD(CDDWorkbook)
+            CDDWorkbook.Close()
             SetProgress(PROGRESS_STEP_CDD * PROGRESS_REFERENCE)
             DoExtractAndMerge()
             SetProgress(PROGRESS_STEP_ASSEMBLE * PROGRESS_REFERENCE)
@@ -331,7 +334,6 @@ Public Class ThisAddIn
             CurrentWorkbook.Save()
             ProgressDialog.Hide()
         End If
-
     End Sub
 
     Private Sub PrepareRecap()
@@ -424,6 +426,7 @@ Public Class ThisAddIn
         Utils.SetAreaValue2(BaseRange.Offset(4, CurrentCol), "", "RecapHeaderStyle6")
         Utils.SetAreaValue2(BaseRange.Offset(5, CurrentCol), "", "RecapHeaderStyle6")
         Utils.SetAreaValue2(BaseRange.Offset(6, CurrentCol), "", "RecapHeaderStyle6")
+        BaseRange.Offset(6, CurrentCol).ColumnWidth = 16
 
         Utils.SetAreaValue2(BaseRange.Offset(0, CurrentCol + 1), "", "RecapHeaderStyle")
         SummaryWorkSheet.Range(BaseRange.Offset(1, CurrentCol + 1).Address, BaseRange.Offset(3, CurrentCol + 1).Address).Merge()
@@ -432,6 +435,7 @@ Public Class ThisAddIn
         Utils.SetAreaValue2(BaseRange.Offset(4, CurrentCol + 1), "", "RecapNumberStyle2")
         Utils.SetAreaValue2(BaseRange.Offset(5, CurrentCol + 1), "", "RecapNumberStyle2")
         Utils.SetAreaValue2(BaseRange.Offset(6, CurrentCol + 1), "", "RecapNumberStyle2")
+        BaseRange.Offset(6, CurrentCol + 1).ColumnWidth = 16
 
         SummaryWorkSheet.Range(BaseRange.Offset(9, CurrentCol + 1).Address, BaseRange.Offset(9, CurrentCol + 2).Address).Merge()
         Utils.SetAreaValue2(BaseRange.Offset(9, CurrentCol + 1), "Montant total disponible :", "RecapHeaderStyle5")
@@ -452,6 +456,7 @@ Public Class ThisAddIn
         Utils.SetCellValue2(BaseRange.Offset(5, 0), "2 Fonctionnement hors amort.", "RecapHeaderStyle4")
         Utils.SetCellValue2(BaseRange.Offset(6, 0), "3 Investissement", "RecapHeaderStyle4")
         Utils.SetCellValue2(BaseRange.Offset(7, 0), "Total", "RecapHeaderStyle5")
+        BaseRange.Offset(7, 0).ColumnWidth = 26.5
     End Sub
 
     Private Sub DumpSummaryForPreviousYear(ByRef BaseRange As Range, yList As List(Of Integer), Year As Integer)
@@ -478,6 +483,11 @@ Public Class ThisAddIn
             Utils.SetCellValue(BaseRange.Offset(6, CurrentCol), 0, "RecapNumberStyle")
         End If
         Utils.SetCellFormula(BaseRange.Offset(7, CurrentCol), Utils.GetFormattedString("SumRange", BaseRange.Offset(4, CurrentCol).Address(False, False), BaseRange.Offset(6, CurrentCol).Address(False, False)), "RecapNumberStyle2")
+        If yList.Count > 2 Then
+            BaseRange.Offset(7, CurrentCol).ColumnWidth = 11.5
+        Else
+            BaseRange.Offset(7, CurrentCol).ColumnWidth = 26.5
+        End If
     End Sub
 
     Private Sub DumpSummaryForLastYear(ByRef baseRange As Range, yList As List(Of Integer), year As Integer)
@@ -490,6 +500,7 @@ Public Class ThisAddIn
         Utils.SetCellValue(baseRange.Offset(5, currentCol), 0, "RecapNumberStyle3")
         Utils.SetCellValue(baseRange.Offset(6, currentCol), 0, "RecapNumberStyle3")
         Utils.SetCellFormula(baseRange.Offset(7, currentCol), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol).Address(False, False), baseRange.Offset(6, currentCol).Address(False, False)), "RecapNumberStyle3")
+        baseRange.Offset(7, currentCol).ColumnWidth = 11.5
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 1).Address, baseRange.Offset(3, currentCol + 1).Address).Merge()
         Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 1), Utils.GetFormattedString("ModifiedBudget", year), "RecapHeaderStyle2")
@@ -497,6 +508,7 @@ Public Class ThisAddIn
         Utils.SetCellValue(baseRange.Offset(5, currentCol + 1), 0, "RecapNumberStyle4")
         Utils.SetCellValue(baseRange.Offset(6, currentCol + 1), 0, "RecapNumberStyle4")
         Utils.SetCellFormula(baseRange.Offset(7, currentCol + 1), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 1).Address(False, False)), "RecapNumberStyle4")
+        baseRange.Offset(7, currentCol + 1).ColumnWidth = 11.5
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 2).Address, baseRange.Offset(3, currentCol + 2).Address).Merge()
         Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 2), Utils.GetFormattedString("EngagedBudget", year), "RecapHeaderStyle2")
@@ -504,6 +516,7 @@ Public Class ThisAddIn
         WriteFonctForLastYear(baseRange, year, currentCol)
         WriteInvestForLastYear(baseRange, year, currentCol)
         Utils.SetCellFormula(baseRange.Offset(7, currentCol + 2), Utils.GetFormattedString("SumRange", baseRange.Offset(4, currentCol + 2).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle3")
+        baseRange.Offset(7, currentCol + 2).ColumnWidth = 11.5
 
         SummaryWorkSheet.Range(baseRange.Offset(1, currentCol + 3).Address, baseRange.Offset(3, currentCol + 3).Address).Merge()
         Utils.SetAreaValue2(baseRange.Offset(1, currentCol + 3), Utils.GetFormattedString("AvailableBudget", year), "RecapHeaderStyle2")
@@ -511,6 +524,7 @@ Public Class ThisAddIn
         Utils.SetCellFormula(baseRange.Offset(5, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(5, currentCol + 1).Address(False, False), baseRange.Offset(5, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
         Utils.SetCellFormula(baseRange.Offset(6, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(6, currentCol + 1).Address(False, False), baseRange.Offset(6, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
         Utils.SetCellFormula(baseRange.Offset(7, currentCol + 3), Utils.GetFormattedString("DirectDiff", baseRange.Offset(7, currentCol + 1).Address(False, False), baseRange.Offset(7, currentCol + 2).Address(False, False)), "RecapNumberStyle4")
+        baseRange.Offset(7, currentCol + 3).ColumnWidth = 11.5
     End Sub
 
     Private Sub WriteInvestForLastYear(baseRange As Range, year As Integer, currentCol As Integer)
@@ -553,12 +567,10 @@ Public Class ThisAddIn
         SummaryCellsNotFound.Add(kind, True)
         Return Nothing
     End Function
-    Private Sub GetCDD(fileName As String)
+    Private Sub GetCDD(cddWorkbook As Workbook)
         NameStep("Récupération des CDD")
         ProgressIncrement = PROGRESS_STEP_CDD / 2
-        Dim CDDWorkbook As Excel.Workbook = Me.Application.Workbooks.Open(fileName)
-        'CDDWorkbook.IsAddin = True
-        Dim CDDWorksheet As Worksheet = CType(CDDWorkbook.Sheets.Item(2), Excel.Worksheet)
+        Dim CDDWorksheet As Worksheet = CType(cddWorkbook.Sheets.Item(2), Excel.Worksheet)
         Dim DataRange As Excel.Range = CDDWorksheet.UsedRange
         Dim FirstRow As Integer = 7
         Dim LastRow As Integer = DataRange.Rows.Count
@@ -596,8 +608,21 @@ Public Class ThisAddIn
             End If
             NextStep()
         Next
-        CDDWorkbook.Close()
     End Sub
+
+    Private Function GetCDDWorkbook(fileName As String) As Workbook
+        Dim CDDWorkbook As Excel.Workbook = Nothing
+        For Each wb As Excel.Workbook In Me.Application.Workbooks
+            If String.Equals(fileName, wb.FullName) Then
+                CDDWorkbook = wb
+            End If
+        Next
+        If CDDWorkbook Is Nothing Then
+            CDDWorkbook = Me.Application.Workbooks.Open(fileName, [ReadOnly]:=True)
+        End If
+        Return CDDWorkbook
+    End Function
+
     ''' <summary>
     ''' Extracts Data from Excel files and merge them into an EDC.
     ''' </summary>
@@ -609,7 +634,7 @@ Public Class ThisAddIn
         BaseDirectory = Path.GetDirectoryName(CurrentWorkbook.FullName)
         SourcesDirectory = String.Format(CultureInfo.InvariantCulture, "{0}{1}", BaseDirectory, SOURCE_DIRECTORY_MODIFIER)
         ExtractionDirectory = String.Format(CultureInfo.InvariantCulture, "{0}{1}", BaseDirectory, EXTRACT_DIRECTORY_MODIFIER)
-        PrepareStyles()
+        StyleUtils.PrepareStyles(CurrentWorkbook)
         Dim Extractions As New List(Of ExtractedData)
         If Not Directory.Exists(ExtractionDirectory) Then
             Directory.CreateDirectory(ExtractionDirectory)
@@ -661,197 +686,6 @@ Public Class ThisAddIn
             CreateSheetForYear(Year, Year = YearList.Min, Year = YearList.Max)
         Next
     End Sub
-
-    Private Sub PrepareStyles()
-        If Not ContainsStyle("WarningDetailStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("WarningDetailStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 11
-            NewStyle.Font.Bold = True
-        End If
-
-        If Not ContainsStyle("WarningHeaderStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("WarningHeaderStyle")
-            NewStyle.Interior.Color = RGB(255, 177, 63)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-        End If
-
-        If Not ContainsStyle("HeaderStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-        End If
-
-        If Not ContainsStyle("HeaderStyleComment") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyleComment")
-            NewStyle.Interior.Color = RGB(255, 177, 63)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-        End If
-
-        If Not ContainsStyle("HeaderStyleFrom") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("HeaderStyleFrom")
-            NewStyle.Interior.Color = RGB(209, 54, 33)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-        End If
-
-        If Not ContainsStyle("MtEngStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("MtEngStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.NumberFormatLocal = "# ##0,00"
-        End If
-
-        If Not ContainsStyle("SIFACCommentaires") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("SIFACCommentaires")
-            NewStyle.Interior.Color = RGB(255, 232, 197)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Black)
-        End If
-
-        If Not ContainsStyle("MtPAStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("MtPAStyle")
-            NewStyle.NumberFormatLocal = "# ##0,00"
-        End If
-
-        If Not ContainsStyle("SumStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("SumStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Bold = True
-            NewStyle.NumberFormatLocal = "# ##0,00"
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignCenter
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle2") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle2")
-            NewStyle.Interior.Color = RGB(166, 166, 166)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignCenter
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle3") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle3")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignLeft
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle4") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle4")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = False
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignLeft
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle5") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle5")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = False
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapHeaderStyle6") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapHeaderStyle6")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Black)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignCenter
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.WrapText = True
-        End If
-
-        If Not ContainsStyle("RecapNumberStyle") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = False
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.NumberFormatLocal = "# ##0,00 €"
-        End If
-
-        If Not ContainsStyle("RecapNumberStyle2") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle2")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.NumberFormatLocal = "# ##0,00 €"
-        End If
-
-        If Not ContainsStyle("RecapNumberStyle3") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle3")
-            NewStyle.Interior.Color = RGB(166, 166, 166)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = False
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.NumberFormatLocal = "# ##0,00 €"
-        End If
-
-        If Not ContainsStyle("RecapNumberStyle4") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle4")
-            NewStyle.Interior.Color = RGB(166, 166, 166)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.White)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.NumberFormatLocal = "# ##0,00 €"
-        End If
-
-        If Not ContainsStyle("RecapNumberStyle5") Then
-            Dim NewStyle As Excel.Style = CurrentWorkbook.Styles.Add("RecapNumberStyle5")
-            NewStyle.Interior.Color = RGB(102, 102, 153)
-            NewStyle.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Black)
-            NewStyle.Font.Size = 9
-            NewStyle.Font.Bold = True
-            NewStyle.HorizontalAlignment = XlHAlign.xlHAlignRight
-            NewStyle.VerticalAlignment = XlVAlign.xlVAlignBottom
-            NewStyle.NumberFormatLocal = "# ##0,00 €"
-        End If
-    End Sub
-
-    Private Function ContainsStyle(aStyle As String) As Boolean
-        For Each Style As Style In CurrentWorkbook.Styles
-            If Style.Name = aStyle Then
-                Return True
-            End If
-        Next
-        Return False
-    End Function
-
     Private Function CreateCopy(aWorkbook As Excel.Workbook) As Excel.Workbook
         Dim NewFileName As String = String.Format(CultureInfo.InvariantCulture, "{0}{1}{2} - New version {3}", Path.GetDirectoryName(aWorkbook.FullName), Path.DirectorySeparatorChar, Path.GetFileNameWithoutExtension(aWorkbook.FullName), DEST_NAME_EXTENSION)
         aWorkbook.SaveCopyAs(NewFileName)
@@ -878,7 +712,7 @@ Public Class ThisAddIn
             FeedWorkSheetWithPendings(NewWorsheet, year)
         Else
             'Potential pending orders past and present years
-            NewWorsheet  = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
+            NewWorsheet = CType(CurrentWorkbook.Worksheets.Add(Before:=AllWorksheets.Item(year - 1)), Excel.Worksheet)
             NewWorsheet.Name = year
             AllWorksheets.Add(year, NewWorsheet)
             FeedWorkSheetWithAllPendings(NewWorsheet, year)
@@ -926,8 +760,8 @@ Public Class ThisAddIn
         {KEY_FONCT, New List(Of BookLine)},
         {KEY_INVEST, New List(Of BookLine)},
         {KEY_MISSION, New List(Of BookLine)},
-        {KEY_SALARY, New List(Of BookLine)}
-    }
+        {KEY_SALARY, New List(Of BookLine)}}
+
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(year - 1).PendingOrders)
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(year).PendingOrders)
         MergedData.Item(KEY_FONCT).AddRange(Data.Item(year).Orders)

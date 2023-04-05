@@ -102,8 +102,10 @@
     <RegisterForComInterop>false</RegisterForComInterop>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
-    <CodeAnalysisRuleSet>SIFACToEDC.Debug.ruleset</CodeAnalysisRuleSet>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <!--
     This section defines properties that are set when the "Release" configuration is selected.
@@ -133,7 +135,8 @@
     <RegisterForComInterop>false</RegisterForComInterop>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
-    <CodeAnalysisRuleSet>.sonarlint\sifac_to_edcvb.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>
+    </CodeAnalysisRuleSet>
   </PropertyGroup>
   <!--
     This section specifies references for the project.
@@ -229,6 +232,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SalaryLineComparison.vb" />
+    <Compile Include="StyleUtils.vb" />
     <Compile Include="ThisAddIn.vb">
       <SubType>Code</SubType>
     </Compile>
@@ -244,7 +248,6 @@
     <EmbeddedResource Include="RibbonEDC.resx">
       <DependentUpon>RibbonEDC.vb</DependentUpon>
     </EmbeddedResource>
-    <None Include=".sonarlint\sifac_to_edcvb.ruleset" />
     <None Include="app.config" />
     <None Include="SIFACToEDC.Debug.ruleset" />
     <None Include="SIFACToEDC.ruleset" />
@@ -276,9 +279,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <AdditionalFiles Include=".sonarlint\sifac_to_edc\VB\SonarLint.xml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

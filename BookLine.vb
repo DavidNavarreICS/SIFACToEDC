@@ -199,4 +199,23 @@
     Public Shared Operator <=(left As BookLine, right As BookLine) As Boolean
         Return Not left > right
     End Operator
+
+    Public Overrides Function ToString() As String
+        Dim asText As String = ""
+        asText &= " " & Cptegen
+        asText &= " " & Rubrique
+        asText &= " " & NumeroFlux
+        asText &= " " & Nom
+        asText &= " " & Libelle
+        asText &= " " & MntEngHTR
+        asText &= " " & MontantPa
+        asText &= " " & Rapprochmt
+        asText &= " " & RefFactF
+        asText &= " " & DatePce
+        asText &= " " & "DCompt"
+        asText &= " " & NumPiece
+        asText &= " " & Comment
+        asText &= " " & From
+        Return asText
+    End Function
 End Class

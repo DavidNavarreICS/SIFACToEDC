@@ -17,8 +17,7 @@ Public NotInheritable Class Utils
         Dim endAddress As String = startRange.Offset(0, 13).Address
         Dim mergedRange As Range = baseRange.Range(startAddress, endAddress)
         mergedRange.Merge()
-        mergedRange.Value2 = message
-        mergedRange.Style = style
+        SetCellValue2(mergedRange, message, style)
     End Sub
     Public Shared Function IsNewHeaderVersion(cell As Range) As Boolean
         If cell Is Nothing Then
@@ -71,39 +70,39 @@ Public NotInheritable Class Utils
         Next
         Return False
     End Function
-    Public Shared Sub SetCellValue(cell As Excel.Range, aValue As String, aStyle As String)
+    Private Shared Sub SetCellContentAndStyle(cell As Excel.Range, content As String, isArea As Boolean, isStyled As Boolean, isValue2 As Boolean, isFormula As Boolean, Optional aStyle As String = "")
         If cell Is Nothing Then
             Throw New System.ArgumentNullException(NameOf(cell))
         End If
-        cell.Value = aValue
-        cell.Style = aStyle
+        If isStyled Then
+            If isArea Then
+                cell.MergeArea.Style = aStyle
+            Else
+                cell.Style = aStyle
+            End If
+        End If
+        If isFormula Then
+            cell.Formula = content
+        ElseIf isValue2 Then
+            cell.Value2 = content
+        Else
+            cell.Value = content
+        End If
+    End Sub
+    Public Shared Sub SetCellValue(cell As Excel.Range, aValue As String, aStyle As String)
+        SetCellContentAndStyle(cell, aValue, False, True, False, False, aStyle)
     End Sub
     Public Shared Sub SetCellValue2(cell As Excel.Range, aValue As String, aStyle As String)
-        If cell Is Nothing Then
-            Throw New System.ArgumentNullException(NameOf(cell))
-        End If
-        cell.Value2 = aValue
-        cell.Style = aStyle
+        SetCellContentAndStyle(cell, aValue, False, True, True, False, aStyle)
     End Sub
     Public Shared Sub SetCellFormula(cell As Excel.Range, aValue As String, aStyle As String)
-        If cell Is Nothing Then
-            Throw New System.ArgumentNullException(NameOf(cell))
-        End If
-        cell.Formula = aValue
-        cell.Style = aStyle
+        SetCellContentAndStyle(cell, aValue, False, True, False, True, aStyle)
     End Sub
     Public Shared Sub SetCellRawFormula(cell As Excel.Range, aValue As String)
-        If cell Is Nothing Then
-            Throw New System.ArgumentNullException(NameOf(cell))
-        End If
-        cell.Formula = aValue
+        SetCellContentAndStyle(cell, aValue, False, False, False, True)
     End Sub
     Public Shared Sub SetAreaValue2(cell As Excel.Range, aValue As String, aStyle As String)
-        If cell Is Nothing Then
-            Throw New System.ArgumentNullException(NameOf(cell))
-        End If
-        cell.Value2 = aValue
-        cell.MergeArea.Style = aStyle
+        SetCellContentAndStyle(cell, aValue, True, True, True, False, aStyle)
     End Sub
     Public Shared Function GetFormattedString(format As String, ParamArray value() As Object) As String
         Return String.Format(CultureInfo.CurrentCulture, Utils.GetMessage(format), value)
@@ -121,11 +120,20 @@ Public NotInheritable Class Utils
         Return line.ACptegen.Trim.StartsWith("2", StringComparison.CurrentCulture)
     End Function
     Public Shared Sub AddLineFromTableToTable(destination As Collection(Of BookLine), source As Collection(Of BookLine))
+        If source Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(source))
+        End If
+        If destination Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(destination))
+        End If
         For Each line As BookLine In source
             destination.Add(line)
         Next
     End Sub
     Public Shared Sub AddLineToTable(key As String, preparedLines As Dictionary(Of String, Collection(Of BookLine)), line As BookLine)
+        If preparedLines Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(preparedLines))
+        End If
         If Not preparedLines.ContainsKey(key) Then
             Dim NewLines As New Collection(Of BookLine) From {
                 line
@@ -135,7 +143,13 @@ Public NotInheritable Class Utils
             preparedLines.Item(key).Add(line)
         End If
     End Sub
-    Public Shared Sub CopyHeaders(baseWorksheet As Excel.Worksheet, newWorksheet As Excel.Worksheet)
+    Public Shared Sub CopyHeaders(baseWorksheet As Excel._Worksheet, newWorksheet As Excel._Worksheet)
+        If baseWorksheet Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(baseWorksheet))
+        End If
+        If newWorksheet Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(newWorksheet))
+        End If
         Dim SourceRange As Excel.Range = baseWorksheet.UsedRange.Rows(1)
         Dim DestRange As Excel.Range = newWorksheet.Range("A1")
         SourceRange.Copy(DestRange)
@@ -145,7 +159,13 @@ Public NotInheritable Class Utils
             RDest.ColumnWidth = RSource.ColumnWidth
         Next
     End Sub
-    Public Shared Sub DumpData(worksheet As Excel.Worksheet, dataTable As Dictionary(Of String, Collection(Of BookLine)))
+    Public Shared Sub DumpData(worksheet As Excel._Worksheet, dataTable As Dictionary(Of String, Collection(Of BookLine)))
+        If worksheet Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(worksheet))
+        End If
+        If dataTable Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(dataTable))
+        End If
         Dim CurrentLine As Integer = 1
         Dim StartRange As Excel.Range = worksheet.Range("A3")
         For Each LineCollection As Collection(Of BookLine) In dataTable.Values
@@ -206,6 +226,9 @@ Public NotInheritable Class Utils
         End If
     End Function
     Public Shared Function GetNumber(fullRange As Range, rowNum As Integer, colNum As Integer) As Double
+        If fullRange Is Nothing Then
+            Throw New System.ArgumentNullException(NameOf(fullRange))
+        End If
         Dim TextToConvert As String = fullRange.Cells(rowNum, colNum).Value2
         Dim IndexVirgule As Integer = TextToConvert.IndexOf(",", StringComparison.Ordinal)
         Dim IndexPoint As Integer = TextToConvert.IndexOf(".", StringComparison.Ordinal)
