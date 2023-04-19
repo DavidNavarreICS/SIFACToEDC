@@ -129,10 +129,7 @@
     End Property
 
     Public Overrides Function Equals(obj As Object) As Boolean
-        If obj Is Nothing OrElse Me.GetType() IsNot obj.GetType() Then
-            Return False
-        End If
-        Return Me.Equals(CType(obj, BookLine))
+        Return obj IsNot Nothing AndAlso Me.GetType() Is obj.GetType() AndAlso Me.Equals(CType(obj, BookLine))
     End Function
 
     Public Overloads Function Equals(other As BookLine) As Boolean Implements IEquatable(Of BookLine).Equals

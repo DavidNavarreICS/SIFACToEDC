@@ -165,6 +165,11 @@ Public Class ExtractedData
     Public Sub DoPrepareExtract()
         TrashTable.Clear()
         FullTable.Clear()
+        InitiateReduceAndTrashTable()
+        PrepareExtractFromTo(BaseWorksheet)
+    End Sub
+
+    Private Sub InitiateReduceAndTrashTable()
         ReducedTable.Clear()
         ReducedTable.Add(KEY_ORDER_PENDING, New Collection(Of BookLine))
         ReducedTable.Add(KEY_ORDER, New Collection(Of BookLine))
@@ -173,8 +178,8 @@ Public Class ExtractedData
         ReducedTable.Add(KEY_MISSION_PENDING, New Collection(Of BookLine))
         ReducedTable.Add(KEY_MISSION, New Collection(Of BookLine))
         TrashTable.Add(KEY_TRASH, New Collection(Of BookLine))
-        PrepareExtractFromTo(BaseWorksheet)
     End Sub
+
     Public Sub DoExtract(previousExtraction As ExtractedData)
         ExtractFromTo(BaseWorksheet, NewWorksheet, TrashWorksheet, previousExtraction)
         NewWorkbook.Save()

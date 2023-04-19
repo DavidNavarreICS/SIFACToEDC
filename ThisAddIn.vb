@@ -163,22 +163,7 @@ Public Class ThisAddIn
             Utils.CreateWarning(String.Format(CultureInfo.CurrentCulture, Utils.GetMessage("Problem1"), currentPbNum), baseRange, currentLine, "WarningDetailStyle")
             currentLine += 1
             currentPbNum += 1
-            For Each line As BookLine In LinesWithComment.Item(year)
-                baseRange.Cells(currentLine, 1).Value2 = line.ACptegen
-                baseRange.Cells(currentLine, 2).Value2 = line.BRubrique
-                baseRange.Cells(currentLine, 3).Value2 = line.CNumeroFlux
-                baseRange.Cells(currentLine, 4).Value2 = line.DNom
-                baseRange.Cells(currentLine, 5).Value2 = line.ELibelle
-                baseRange.Cells(currentLine, 6).Value2 = line.FMntEngHtr
-                baseRange.Cells(currentLine, 7).Value2 = line.GMontantPA
-                baseRange.Cells(currentLine, 8).Value2 = line.HRapprochmt
-                baseRange.Cells(currentLine, 9).Value2 = line.IRefFactF
-                baseRange.Cells(currentLine, 10).Value2 = line.JDatePce
-                baseRange.Cells(currentLine, 11).Value2 = Utils.GetDateCompteAsText(line)
-                baseRange.Cells(currentLine, 12).Value2 = line.LNumPiece
-                baseRange.Cells(currentLine, 13).Value2 = line.MComment
-                currentLine += 1
-            Next
+            currentLine = DumpLineThatDesapeared(year, baseRange, currentLine)
             currentLine += 1
         End If
         If OutOfRangeComments.Item(year) Then
@@ -197,6 +182,28 @@ Public Class ThisAddIn
         End If
         Return currentLine
     End Function
+
+    Private Function DumpLineThatDesapeared(year As Integer, baseRange As Range, currentLine As Integer) As Integer
+        For Each line As BookLine In LinesWithComment.Item(year)
+            baseRange.Cells(currentLine, 1).Value2 = line.ACptegen
+            baseRange.Cells(currentLine, 2).Value2 = line.BRubrique
+            baseRange.Cells(currentLine, 3).Value2 = line.CNumeroFlux
+            baseRange.Cells(currentLine, 4).Value2 = line.DNom
+            baseRange.Cells(currentLine, 5).Value2 = line.ELibelle
+            baseRange.Cells(currentLine, 6).Value2 = line.FMntEngHtr
+            baseRange.Cells(currentLine, 7).Value2 = line.GMontantPA
+            baseRange.Cells(currentLine, 8).Value2 = line.HRapprochmt
+            baseRange.Cells(currentLine, 9).Value2 = line.IRefFactF
+            baseRange.Cells(currentLine, 10).Value2 = line.JDatePce
+            baseRange.Cells(currentLine, 11).Value2 = Utils.GetDateCompteAsText(line)
+            baseRange.Cells(currentLine, 12).Value2 = line.LNumPiece
+            baseRange.Cells(currentLine, 13).Value2 = line.MComment
+            currentLine += 1
+        Next
+
+        Return currentLine
+    End Function
+
     Private Function IsSheetWithWarnings(year As Integer) As Boolean
         If LinesWithComment.ContainsKey(year) AndAlso LinesWithComment.Item(year).Count > 0 Then
             Return True
